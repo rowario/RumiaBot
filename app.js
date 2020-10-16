@@ -343,8 +343,8 @@ client.on('message', async (channel, user, message, self) => {
 						["- # 『RowarioDark』 - (0.1) [DT]", "Временно недоступен"]
 					]);
 				if(allskins.has(skin)) {
-						client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (${allskins.get(skin)})`))
-					} else client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (Not Uploaded)`));
+					client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (${allskins.get(skin)})`))
+				} else client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (Not Uploaded)`));
 			}
 			else client.say(Settings.channel, entities.decode(`Команда недосутпна :(`));
 		});
