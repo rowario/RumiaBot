@@ -214,11 +214,11 @@ client.on('message', async (channel, user, message, self) => {
 									oppaiData.push(getOppai);
 									ppAccString += `100%: ${getOppai.pp}PP, `;
 								}
-								let bpm = (existMods.indexOf('dt') + 1 || (existMods.indexOf('nc') + 1) ? parseInt(mI.bpm * 1.5) : parseInt(mI.bpm),
+								let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mI.bpm * 1.5) : parseInt(mI.bpm),
 									bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
 									starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mI.difficultyrating).toFixed(2),
-									mapIrl = `[https://osu.ppy.sh/b/${mI.beatmap_id} ${mI.artist} - ${mI.title}]${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
-								ircClient.say(`${Settings.osuIrcLogin}`,`${user.username} > ${mapIrl}`);
+									mapIrc = `[https://osu.ppy.sh/b/${mI.beatmap_id} ${mI.artist} - ${mI.title}] ${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
+								ircClient.say(`${Settings.osuIrcLogin}`,`${user.username} > ${mapIrc}`);
 								client.say(Settings.channel,`/me > ${user.username} ${mI.artist} - ${mI.title} реквест добавлен!`);
 							}
 						}
