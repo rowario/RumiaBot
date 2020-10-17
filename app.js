@@ -234,35 +234,42 @@ client.on('message', async (channel, user, message, self) => {
 
 	if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
 		let linkInfo = osuLinkCheker(linkParser);
-		console.log(linkInfo);
-		if (["b","s"].indexOf(linkInfo.type) + 1 && chekTimeout(user.username)) {
-			let getMapConfig = (linkInfo.type == "b") ? { b: linkInfo.id } : { s: linkInfo.id };
-			osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
-				if (beatmaps[0]) {
-					lastReq = getTimeNow();
-					usersReqs.set(user.username,getTimeNow());
-					let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
-						existMods = [],
-						msgParse = message.replace(["https://"],"");
-					for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
-					let mapInfo = beatmaps[0],
-						newStarRate = 0,
-						modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
-						oppaiData = [],
-						ppAccString = ``;
-					for await (let acc of [100,99,98,95]) {
-						let getOppai = await getOppaiData(mapInfo.id,modsI,acc);
-						oppaiData.push(getOppai);
-						ppAccString += `${acc}%: ${getOppai.pp}PP, `;
-					}
-					let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mapInfo.bpm * 1.5) : parseInt(mapInfo.bpm),
-						bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
-						starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
-						mapIrc = `[https://osu.ppy.sh/b/${mapInfo.beatmap_id} ${mapInfo.artist} - ${mapInfo.title}] ${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
-					banchoUser.sendMessage(`${user.username} > ${mapIrc}`);
-					client.say(Settings.channel,`/me > ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
-				}
-			});
+		if (linkInfo) {
+			switch (linkInfo.type) {
+				case "s":
+				case "b":
+					let getMapConfig = (linkInfo.type == "b") ? { b: linkInfo.id } : { s: linkInfo.id };
+					osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
+						if (beatmaps[0]) {
+							lastReq = getTimeNow();
+							usersReqs.set(user.username,getTimeNow());
+							let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
+								existMods = [],
+								msgParse = message.replace(["https://"],"");
+							for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
+							let mapInfo = beatmaps[0],
+								newStarRate = 0,
+								modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
+								oppaiData = [],
+								ppAccString = ``;
+							for await (let acc of [100,99,98,95]) {
+								let getOppai = await getOppaiData(mapInfo.id,modsI,acc);
+								oppaiData.push(getOppai);
+								ppAccString += `${acc}%: ${getOppai.pp}PP, `;
+							}
+							let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mapInfo.bpm * 1.5) : parseInt(mapInfo.bpm),
+								bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
+								starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
+								mapIrc = `[https://osu.ppy.sh/b/${mapInfo.beatmap_id} ${mapInfo.artist} - ${mapInfo.title}] ${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
+							banchoUser.sendMessage(`${user.username} > ${mapIrc}`);
+							client.say(Settings.channel,`/me > ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
+						}
+					});
+					break;
+				case "s":
+					// Место под проверку профилей
+				default: break;
+			}
 		}
 	}
 
