@@ -102,7 +102,7 @@ client.on('message', async (channel, user, message, self) => {
 								for await (let item of [100,99,98,95]) {
 									let getOppai = await getOppaiData(bId,modsI,item);
 									oppaiData.push(getOppai);
-									ppAccString += `100%: ${getOppai.pp}PP, `;
+									ppAccString += `${acc}%: ${getOppai.pp}PP, `;
 								}
 								let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mI.bpm * 1.5) : parseInt(mI.bpm),
 									bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
@@ -162,6 +162,7 @@ client.on('message', async (channel, user, message, self) => {
 		}
 		let randIq = randomInteger(1,250);
 		if (user.username === "rowario") randIq = 99999999999999999;
+		if (user.username === "robloxxa") randIq = -1;
 		client.say(Settings.channel, entities.decode(`${user.username} твой IQ ${randIq}`));
 	}
 });
