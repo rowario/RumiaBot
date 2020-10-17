@@ -1,6 +1,6 @@
 const tmi = require('tmi.js'),
 	Settings = require('./settings.json'),
-	Commands = require('./commands.json'),
+	Commandlist = require('./commandlist.json'),
 	irc = require('irc'),
 	url = require('url'),
 	{spawn,exec} = require('child_process'),
@@ -72,7 +72,6 @@ client.on('message', async (channel, user, message, self) => {
 	if(self) return;
 	var uid = user['user-id'];
 	var message = message.toLowerCase();
-	var commands = Commands.kappa;
 	let rewards = new Map([
 		["626ba9d4-3478-442d-9c1d-56af03af9f77", "Играть с FL"],
 		["30b2e45b-6626-454c-ad13-11517c573dd0", "Играть с выкл. монитором"]
@@ -84,6 +83,7 @@ client.on('message', async (channel, user, message, self) => {
 			ircClient.say(`${Settings.osuIrcLogin}`,`${user.username} > ${rewardOPT} ${message}`);
 		}
 	};
+	exec(`curl -X get`)
 	switch(message) {
 		case "!нп":
 		case "!мап":
@@ -167,6 +167,14 @@ client.on('message', async (channel, user, message, self) => {
 					}
 				}
 			}
+			for(let element of Commandlist) {
+				for(let alias of element.aliases){
+					let mention = (element.settings.mention) ? user.username : "";
+					if(alias == message){
+						client.say(Settings.channel, `${mention}, ${element.answer}`);
+					}
+				}
+			};
 			break;
 	}
 });
