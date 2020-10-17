@@ -1,6 +1,7 @@
 const tmi = require('tmi.js'),
 	Settings = require('./settings.json'),
 	Commandlist = require('./commandlist.json'),
+	request = require('request');
 	irc = require('irc'),
 	url = require('url'),
 	{spawn,exec} = require('child_process'),
@@ -71,11 +72,14 @@ function isJson(str) {
 client.on('message', async (channel, user, message, self) => {
 	if(self) return;
 	var uid = user['user-id'];
+	var osuUrl = 'https://osu.ppy.sh/api/';
 	var message = message.toLowerCase();
 	let rewards = new Map([
 		["626ba9d4-3478-442d-9c1d-56af03af9f77", "Играть с FL"],
-		["30b2e45b-6626-454c-ad13-11517c573dd0", "Играть с выкл. монитором"]
+		["30b2e45b-6626-454c-ad13-11517c573dd0", "Играть с выкл. монитором"],
+		["973a1050-e8e9-43a5-b7bc-68b704eb1cfd", "Авто. оценка профиля"]
 	]);
+	console.log(user['custom-reward-id']);
 	rewardOPT = (rewards.has(user['custom-reward-id'])) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${rewards.get(user['custom-reward-id'])} |` : "";
 	let linkParser = url.parse(message);
 	if (rewards.has(user['custom-reward-id']) && (!linkParser.host)){
@@ -83,7 +87,6 @@ client.on('message', async (channel, user, message, self) => {
 			ircClient.say(`${Settings.osuIrcLogin}`,`${user.username} > ${rewardOPT} ${message}`);
 		}
 	};
-	exec(`curl -X get`)
 	switch(message) {
 		case "!нп":
 		case "!мап":
@@ -131,38 +134,40 @@ client.on('message', async (channel, user, message, self) => {
 			if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
 				if (!usersReqa.has(user.username) || usersReqa.get(user.username) < parseInt(getTimeNow() - 12)) {
 					if (lastReq < parseInt(getTimeNow() - 5)) {
-						let pathArr = linkParser.path.split("/"),
-							bId = (pathArr[1] == "b" || pathArr[1] == "beatmaps") ? parseInt(pathArr[2]) : parseInt(linkParser.hash.split("/")[1]);
-						if (bId !== "null" && bId !== 0) {
-							exec(`curl -X GET "https://osu.ppy.sh/api/get_beatmaps?k=${Settings.osuToken}&b=${bId}"`, async (err,stdout,stderr) => {
-								if (stdout !== "null" && !err && isJson(stdout)) {
-									let data = JSON.parse(stdout);
-									if (data[0]) {
-										lastReq = getTimeNow();
-										usersReqa.set(user.username,getTimeNow());
-										let arrIndexes = ['ez','ht','nf','hd','dt','nc','hr'];
-											existMods = [],
-											msgParse = message.replace(["https://"],"");
-										for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMap.indexOf(item) + 1) existMap.push(item);
-										let mI = data[0],
-											newStarRate = 0,
-											modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
-											oppaiData = [],
-											ppAccString = ``;
-										for await (let acc of [100,99,98,95]) {
-											let getOppai = await getOppaiData(bId,modsI,acc);
-											oppaiData.push(getOppai);
-											ppAccString += `${acc}%: ${getOppai.pp}PP, `;
+						let pathArr = linkParser.path.split("/");
+						if (!pathArr[1] == "b" || !pathArr[1] == "beatmaps"){
+							let bId = (pathArr[1] == "b" || pathArr[1] == "beatmaps") ? parseInt(pathArr[2]) : parseInt(linkParser.hash.split("/")[1]);
+							if (bId !== "null" && bId !== 0) {
+								exec(`curl -X GET "https://osu.ppy.sh/api/get_beatmaps?k=${Settings.osuToken}&b=${bId}"`, async (err,stdout,stderr) => {
+									if (stdout !== "null" && !err && isJson(stdout)) {
+										let data = JSON.parse(stdout);
+										if (data[0]) {
+											lastReq = getTimeNow();
+											usersReqa.set(user.username,getTimeNow());
+											let arrIndexes = ['ez','ht','nf','hd','dt','nc','hr'];
+												existMods = [],
+												msgParse = message.replace(["https://"],"");
+											for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMap.indexOf(item) + 1) existMap.push(item);
+											let mI = data[0],
+												newStarRate = 0,
+												modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
+												oppaiData = [],
+												ppAccString = ``;
+											for await (let acc of [100,99,98,95]) {
+												let getOppai = await getOppaiData(bId,modsI,acc);
+												oppaiData.push(getOppai);
+												ppAccString += `${acc}%: ${getOppai.pp}PP, `;
+											}
+											let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mI.bpm * 1.5) : parseInt(mI.bpm),
+												bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
+												starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mI.difficultyrating).toFixed(2),
+												mapIrl = `[https://osu.ppy.sh/b/${mI.beatmap_id} ${mI.artist} - ${mI.title}]${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
+											ircClient.say(`${Settings.osuIrcLogin}`,`${rewardOPT} ${user.username} > ${mapIrl}`);
+											client.say(Settings.channel,`/me > ${user.username} ${mI.artist} - ${mI.title} реквест добавлен!`);
 										}
-										let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mI.bpm * 1.5) : parseInt(mI.bpm),
-											bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
-											starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mI.difficultyrating).toFixed(2),
-											mapIrl = `[https://osu.ppy.sh/b/${mI.beatmap_id} ${mI.artist} - ${mI.title}]${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
-										ircClient.say(`${Settings.osuIrcLogin}`,`${rewardOPT} ${user.username} > ${mapIrl}`);
-										client.say(Settings.channel,`/me > ${user.username} ${mI.artist} - ${mI.title} реквест добавлен!`);
 									}
-								}
-							});
+								});
+							}
 						}
 					}
 				}
@@ -175,6 +180,24 @@ client.on('message', async (channel, user, message, self) => {
 					}
 				}
 			};
+			if(rewards.has(user['custom-reward-id'])){
+				if(linkParser.host == 'osu.ppy.sh'){
+					let pathArr = linkParser.path.split("/"),
+					uId = ((pathArr[1] == "u" || pathArr[1] == "users") && parseInt(pathArr[2]) == "") ? parseInt(pathArr[2]) : pathArr[2];
+					console.log(uId);
+					 	if(uId !== "null" && uId !== 0){
+							request({url: `${osuUrl}get_user_best?k=${Settings.osuToken}&limit=20&u=${uId}`}, (error, response, body) => {
+								let maps = JSON.parse(body);
+								for (let map of maps) {
+									request({url: `${osuUrl}get_beatmaps?k=${Settings.osuToken}&b=${map.beatmap_id}`}, (error, response, body) => {
+										let mapData = JSON.parse(body);
+										console.log(mapData);
+									})
+								}
+							})
+						}
+					}
+				}
 			break;
 	}
 });
