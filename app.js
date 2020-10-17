@@ -22,10 +22,24 @@ const tmi = require('tmi.js'),
 		password: Settings.osuIrcPass
 	});
 
+var usersMessages = new Map(),
+	usersReqs = new Map(),
+	lastReq = 0;
+
 ircClient.connect();
 client.connect();
 
 function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000)); }
+
+function isJson(str) {
+	try {
+
+		JSON.parse(str);
+	} catch (e) {
+		return false;
+	}
+	return true;
+}
 
 async function getOppaiData(beatmap_id,mods,acc) {
 	return new Promise(function(res) {
@@ -67,11 +81,11 @@ client.on('message', async (channel, user, message, self) => {
 	if(self) return;
 	var uid = user['user-id'];
 	var message = message.toLowerCase();
-	let rewards = new Map([
-		["626ba9d4-3478-442d-9c1d-56af03af9f77", "Играть с FL"],
-		["30b2e45b-6626-454c-ad13-11517c573dd0", "Играть с выкл. монитором"]
-	]);
-	let rewardOPT = (rewards.has(user['custom-reward-id'])) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${rewards.get(user['custom-reward-id'])} |` : "";
+
+	if (usersMessages.has(user.username) && usersMessages.get(user.username) >= parseInt(getTimeNow() - 2)) decreaseExpirience(user.id);
+
+	usersMessages.set(user.username,getTimeNow());
+
 	let linkParser = url.parse(message);
 	if (rewards.has(user['custom-reward-id']) && (!linkParser.host)){
 		if (!usersReqa.has(user.username) || usersReqa.get(user.username) < parseInt(getTimeNow() - 12)){
@@ -117,32 +131,6 @@ client.on('message', async (channel, user, message, self) => {
 			}
 		}
 	}
-	if (message === "!currentskin" | message === "!текущийскин" | message === "!skin" | message === "!скин") {
-		exec(`curl -X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
-			if (stdout !== "null" && !err && isJson(stdout)) {
-				let data = JSON.parse(stdout),
-					skin = data.menu.skinFolder,
-					allskins = new Map([
-						["# 108Joker(Red)", "https://bit.ly/3nW03gv"],
-						["# Aristia(Blue Cursor)", "https://bit.ly/3nQASvI"],
-						["# Aristia(Cursor notrail)", "https://bit.ly/31cRgwW"],
-						["# Aristia(CursorTrail)", "https://bit.ly/355AfGc"],
-						["# azer8dawn", "https://bit.ly/3lM3ep4"],
-						["# Default Skin edit", "https://bit.ly/353odNB"],
-						["# Emilia Skin", "https://bit.ly/353mRCv"],
-						["# Enslada", "https://bit.ly/31fCA09"],
-						["# NaruV3.0", "https://bit.ly/3lQgetW"],
-						["# pixel atmosphere", "https://bit.ly/2IBY8xv"],
-						["# Hikonya", "https://bit.ly/3lSWuG5"],
-						["# Papich Skin", "https://bit.ly/37issrn"]
-					]);
-				if(allskins.has(skin)) {
-						client.say(Settings.channel,entities.decode(`Current Skin: ${skin} (${allskins.get(skin)})`))
-					} else client.say(Settings.channel,entities.decode(`Current Skin: ${skin} (Not Uploaded)`));
-			}
-			else client.say(Settings.channel, entities.decode(`Command not available :(`));
-		});
-	}
 	if (message === "!np" || message === "!нп" || message === "!карта" || message === "!map" || message === "!мап") {
 		exec(`curl \
 			-X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
@@ -150,9 +138,10 @@ client.on('message', async (channel, user, message, self) => {
 				let data = JSON.parse(stdout),
 					bm = data.menu.bm,
 					mapd = bm.metadata,
-					mapLink = (bm.id !== 0) ? `https://osu.ppy.sh/beatmaps/${bm.id}` : `(Not Submitted)`;
-				client.say(Settings.channel,entities.decode(`Now playing: ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`));
-			}else client.say(Settings.channel, entities.decode(`Command not available :(`));
+					mapLink = (bm.id !== 0) ? `(https://osu.ppy.sh/beatmaps/${bm.id})` : `(карты нет на сайте)`;
+				client.say(Settings.channel,entities.decode(`/me > ${user.username} Сейчас играет ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`));
+			}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Эта команда сейчас недоступна :(`));
+
 		});
 	}
 	if (message === "!iq") {
@@ -162,6 +151,24 @@ client.on('message', async (channel, user, message, self) => {
 		}
 		let randIq = randomInteger(1,250);
 		if (user.username === "rowario") randIq = 99999999999999999;
-		client.say(Settings.channel, entities.decode(`${user.username} твой IQ ${randIq}`));
+		client.say(Settings.channel, entities.decode(`/me > ${user.username} твой IQ ${randIq}`));
+	}
+	if (message === "!currentskin" | message === "!текущийскин" | message === "!skin" | message === "!скин") {
+		exec(`curl \
+			-X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
+			if (stdout !== "null" && !err && isJson(stdout)) {
+				let data = JSON.parse(stdout),
+					skin = data.menuser.skinFolder,
+					allskins = new Map([
+						["- # 『Rowario』 - (0.1)", "https://bit.ly/3nW03gv"],
+						["- # 『RowarioDark』 - (0.1)", "https://bit.ly/3nQASvI"],
+						["- # 『RowarioDark』 - (0.1) [DT]", "Временно недоступен"]
+					]);
+				if(allskins.has(skin)) {
+					client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (${allskins.get(skin)})`))
+				} else client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (Not Uploaded)`));
+			}
+			else client.say(Settings.channel, entities.decode(`Команда недосутпна :(`));
+		});
 	}
 });
