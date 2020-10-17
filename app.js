@@ -33,7 +33,6 @@ function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000))
 
 function isJson(str) {
 	try {
-
 		JSON.parse(str);
 	} catch (e) {
 		return false;
@@ -81,10 +80,6 @@ client.on('message', async (channel, user, message, self) => {
 	if(self) return;
 	var uid = user['user-id'];
 	var message = message.toLowerCase();
-
-	if (usersMessages.has(user.username) && usersMessages.get(user.username) >= parseInt(getTimeNow() - 2)) decreaseExpirience(user.id);
-
-	usersMessages.set(user.username,getTimeNow());
 
 	let linkParser = url.parse(message);
 	if (rewards.has(user['custom-reward-id']) && (!linkParser.host)){
@@ -151,6 +146,7 @@ client.on('message', async (channel, user, message, self) => {
 		}
 		let randIq = randomInteger(1,250);
 		if (user.username === "rowario") randIq = 99999999999999999;
+		if (user.username === "robloxxa0_0") randIq = -1;
 		client.say(Settings.channel, entities.decode(`/me > ${user.username} твой IQ ${randIq}`));
 	}
 	if (message === "!currentskin" | message === "!текущийскин" | message === "!skin" | message === "!скин") {
@@ -158,7 +154,7 @@ client.on('message', async (channel, user, message, self) => {
 			-X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
 			if (stdout !== "null" && !err && isJson(stdout)) {
 				let data = JSON.parse(stdout),
-					skin = data.menuser.skinFolder,
+					skin = data.menu.skinFolder,
 					allskins = new Map([
 						["- # 『Rowario』 - (0.1)", "https://bit.ly/3nW03gv"],
 						["- # 『RowarioDark』 - (0.1)", "https://bit.ly/3nQASvI"],
