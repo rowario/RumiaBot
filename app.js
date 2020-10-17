@@ -85,9 +85,26 @@ function chekTimeout(username) {
 	return true;
 }
 
+function getOsuFile(beatmap_id) {
+	return new Promise( res => {
+		let file_name = `./beatmaps/${beatmap_id}.osu`;
+		if (!fs.existsSync(file_name)) {
+			request({url: `https://osu.ppy.sh/osu/${beatmap_id}`}, (error, response, body) => {
+				if (!error && body !== "null") {
+					fs.writeFile(file_name, body, (err,data) => {
+						if (err) res(false);
+						res(file_name);
+					})
+				}
+			});
+		}else res(file_name);
+	});
+}
+
 async function getOppaiData(beatmap_id,mods,acc) {
-	return new Promise(function(res) {
-		exec(`curl "https://osu.ppy.sh/osu/${beatmap_id}" | "./oppai.exe" -${mods} ${acc}%`, function (err,stdout,stderr) {
+	return new Promise(async res => {
+		let file_name = await getOsuFile(beatmap_id);
+		exec(`"./oppai.exe" "${file_name}" ${mods} ${acc}%`, function (err,stdout,stderr) {
 			if (!err && stdout !== "null") {
 				let mapData = stdout.split("\n"),
 					stats = mapData[12].split(" ");
