@@ -40,6 +40,44 @@ function isJson(str) {
 	return true;
 }
 
+
+function osuLinkCheker(linkData) {
+	let pathArr = linkData.path.split("/"),
+		id;
+	if (["b","beatmaps","beatmapsets"].indexOf(pathArr[1]) + 1) {
+		if (pathArr[1] == 'beatmapsets' && linkData.hash !== null) {
+			return {
+				type: "b",
+				id: parseInt(linkData.hash.split("/")[1])
+			}
+		}else if (["b","beatmaps"].indexOf(pathArr[1]) + 1){
+			return {
+				type: "b",
+				id: parseInt(pathArr[2])
+			}
+		}
+	}
+	if (["s","beatmapsets"].indexOf(pathArr[1]) + 1) {
+		return {
+			type: "s",
+			id: parseInt(pathArr[2])
+		};
+	}
+	if (["u","users"].indexOf(pathArr[1]) + 1 && ["osu.ppy.sh","old.ppy.sh"].indexOf(linkData.host) + 1) {
+		return {
+			type: "p",
+			id: parseInt(pathArr[2])
+		};
+	}
+	return false;
+}
+
+function chekTimeout(username) {
+	if (usersReqs.has(username) && usersReqs.get(username) > parseInt(getTimeNow() - 20)) return false;
+	if (lastReq > parseInt(getTimeNow() - 5)) return false;
+	return true;
+}
+
 async function getOppaiData(beatmap_id,mods,acc) {
 	return new Promise(function(res) {
 		exec(`curl "https://osu.ppy.sh/osu/${beatmap_id}" | "./oppai.exe" -${mods} ${acc}%`, function (err,stdout,stderr) {
