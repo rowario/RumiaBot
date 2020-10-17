@@ -4,6 +4,7 @@ const tmi = require('tmi.js'),
 	Banchojs = require("bancho.js"),
 	mongoose = require('mongoose'),
 	url = require('url'),
+	fs = require('fs'),
 	osu = require('node-osu'),
 	{spawn,exec} = require('child_process'),
 	request = require('request'),
@@ -185,9 +186,26 @@ function chekTimeout(username) {
 	return true;
 }
 
+function getOsuFile(beatmap_id) {
+	return new Promise( res => {
+		let file_name = `./beatmaps/${beatmap_id}.osu`;
+		if (!fs.existsSync(file_name)) {
+			request({url: `https://osu.ppy.sh/osu/${beatmap_id}`}, (error, response, body) => {
+				if (!error && body !== "null") {
+					fs.writeFile(file_name, body, (err,data) => {
+						if (err) res(false);
+						res(file_name);
+					})
+				}
+			});
+		}else res(file_name);
+	});
+}
+
 async function getOppaiData(beatmap_id,mods,acc) {
-	return new Promise(function(res) {
-		exec(`curl "https://osu.ppy.sh/osu/${beatmap_id}" | "./oppai.exe" -${mods} ${acc}%`, function (err,stdout,stderr) {
+	return new Promise(async res => {
+		let file_name = await getOsuFile(beatmap_id);
+		exec(`"./oppai.exe" "${file_name}" ${mods} ${acc}%`, function (err,stdout,stderr) {
 			if (!err && stdout !== "null") {
 				let mapData = stdout.split("\n"),
 					stats = mapData[12].split(" ");
@@ -234,7 +252,7 @@ client.on('message', async (channel, user, message, self) => {
 
 	if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
 		let linkInfo = osuLinkCheker(linkParser);
-		if (linkInfo) {
+		if (linkInfo && chekTimeout(user.username)) {
 			switch (linkInfo.type) {
 				case "s":
 				case "b":
@@ -252,7 +270,7 @@ client.on('message', async (channel, user, message, self) => {
 								modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
 								oppaiData = [],
 								ppAccString = ``;
-							for await (let acc of [100,99,98,95]) {
+							for await (let acc of [95,98,99,100]) {
 								let getOppai = await getOppaiData(mapInfo.id,modsI,acc);
 								oppaiData.push(getOppai);
 								ppAccString += `${acc}%: ${getOppai.pp}PP, `;
