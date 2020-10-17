@@ -94,12 +94,12 @@ client.on('message', async (channel, user, message, self) => {
 		case "!nowplaying":
 		case "!map":
 		case "!np":
-			exec(`curl -X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
-				if (stdout !== "null" && !err && isJson(stdout)) {
-					let data = JSON.parse(stdout),
-						bm = data.menu.bm,
-						mapd = bm.metadata,
-						mapLink = (bm.id !== 0) ? `(https://osu.ppy.sh/beatmaps/${bm.id})` : `(карты нет на сайте)`;
+			request({url: `http://localhost:24050/json`}, (error, response, body) => {
+				if (body !== "null" && !error && isJson(body)) {
+					let data = JSON.parse(body),
+					bm = data.menu.bm,
+					mapd = bm.metadata,
+					mapLink = (bm.id !== 0) ? `(https://osu.ppy.sh/beatmaps/${bm.id})` : `(карты нет на сайте)`;
 					client.say(Settings.channel,entities.decode(`/me > ${user.username} Сейчас играет ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`));
 				}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Эта команда сейчас недоступна :(`));
 			});
@@ -108,11 +108,11 @@ client.on('message', async (channel, user, message, self) => {
 		case "!скин":
 		case "!currentskin":
 		case "!skin":
-			exec(`curl -X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
-				if (stdout !== "null" && !err && isJson(stdout)) {
-					let data = JSON.parse(stdout),
-						skin = data.menu.skinFolder,
-						allskins = new Map(Settings.skins);
+			request({url:`http://localhost:24050/json`}, (error, response, body) => {
+				if (body !== "null" && !error && isJson(body)) {
+					let data = JSON.parse(body),
+					skin = data.menu.skinFolder,
+					allskins = new Map(Settings.skins);
 					if(allskins.has(skin)) {
 						client.say(Settings.channel,entities.decode(`/me > Текущий скин: ${skin} (${allskins.get(skin)})`))
 					} else client.say(Settings.channel,entities.decode(`/me > Текущий скин: ${skin} (Not Uploaded)`));
@@ -138,9 +138,9 @@ client.on('message', async (channel, user, message, self) => {
 						if (!pathArr[1] == "b" || !pathArr[1] == "beatmaps"){
 							let bId = (pathArr[1] == "b" || pathArr[1] == "beatmaps") ? parseInt(pathArr[2]) : parseInt(linkParser.hash.split("/")[1]);
 							if (bId !== "null" && bId !== 0) {
-								exec(`curl -X GET "https://osu.ppy.sh/api/get_beatmaps?k=${Settings.osuToken}&b=${bId}"`, async (err,stdout,stderr) => {
-									if (stdout !== "null" && !err && isJson(stdout)) {
-										let data = JSON.parse(stdout);
+								request({url: `https://osu.ppy.sh/api/get_beatmaps?k=${Settings.osuToken}&b=${bId}`}, async (error, response, body) => {
+									if (body !== "null" && !error && isJson(body)) {
+										let data = JSON.parse(body);
 										if (data[0]) {
 											lastReq = getTimeNow();
 											usersReqa.set(user.username,getTimeNow());
