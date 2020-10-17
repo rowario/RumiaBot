@@ -155,11 +155,7 @@ client.on('message', async (channel, user, message, self) => {
 			if (stdout !== "null" && !err && isJson(stdout)) {
 				let data = JSON.parse(stdout),
 					skin = data.menu.skinFolder,
-					allskins = new Map([
-						["- # 『Rowario』 - (0.1)", "https://bit.ly/3nW03gv"],
-						["- # 『RowarioDark』 - (0.1)", "https://bit.ly/3nQASvI"],
-						["- # 『RowarioDark』 - (0.1) [DT]", "Временно недоступен"]
-					]);
+					allskins = new Map(Settings.skins);
 				if(allskins.has(skin)) {
 					client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (${allskins.get(skin)})`))
 				} else client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (Not Uploaded)`));
