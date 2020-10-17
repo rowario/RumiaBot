@@ -1,5 +1,4 @@
 /node_modules
-/beatmaps/*
 settings.json
-test.js
 .gitignore
+test.js
