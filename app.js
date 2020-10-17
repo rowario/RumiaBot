@@ -2,6 +2,9 @@ const tmi = require('tmi.js'),
 	Settings = require('./settings.json'),
 	irc = require('irc'),
 	url = require('url'),
+	Banchojs = require("bancho.js"),
+	osu = require('node-osu'),
+	request = require('request'),
 	{spawn,exec} = require('child_process'),
 	Entities = require('html-entities').XmlEntities,
 	entities = new Entities(),
@@ -17,16 +20,21 @@ const tmi = require('tmi.js'),
 		},
 		channels: [ Settings.channel ]
 	}),
-	ircClient = new irc.Client('irc.ppy.sh', Settings.osuIrcLogin,{
-		port: 6667,
-		password: Settings.osuIrcPass
-	});
+	osuApi = new osu.Api(Settings.osuToken, {
+		notFoundAsError: true,
+		completeScores: true,
+		parseNumeric: false
+	}),
+	banchoIrc = new Banchojs.BanchoClient({ username: Settings.osuIrcLogin, password: Settings.osuIrcPass }),
+	banchoUser = banchoIrc.getSelf();
 
 var usersMessages = new Map(),
 	usersReqs = new Map(),
 	lastReq = 0;
 
-ircClient.connect();
+banchoIrc.connect().then(() => {
+	console.log(`Connected to bancho!`);
+})
 client.connect();
 
 function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000)); }
@@ -39,7 +47,6 @@ function isJson(str) {
 	}
 	return true;
 }
-
 
 function osuLinkCheker(linkData) {
 	let pathArr = linkData.path.split("/"),
@@ -99,6 +106,7 @@ async function getOppaiData(beatmap_id,mods,acc) {
 		})
 	});
 }
+
 var currentSkip = new Map(),
 	usersMessages = new Map(),
 	usersReqa = new Map(),
@@ -106,28 +114,28 @@ var currentSkip = new Map(),
 	currentSong = "";
 
 function isJson(str) {
-    try {
-        JSON.parse(str);
-    } catch (e) {
-        return false;
-    }
-    return true;
+	try {
+		JSON.parse(str);
+	} catch (e) {
+		return false;
+	}
+	return true;
 }
+
 
 client.on('message', async (channel, user, message, self) => {
 	if(self) return;
 	var uid = user['user-id'];
 	var message = message.toLowerCase();
 	let linkParser = url.parse(message);
+	// TODO: Перенести массив с ревардами в конфиг (Settings.rewards)
 	let rewards = new Map([
 		["626ba9d4-3478-442d-9c1d-56af03af9f77", "Играть с FL"],
 		["30b2e45b-6626-454c-ad13-11517c573dd0", "Играть с выкл. монитором"]
 	]),
 	rewardOPT = (rewards.has(user['custom-reward-id'])) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${rewards.get(user['custom-reward-id'])} |` : "";
-	if (rewards.has(user['custom-reward-id']) && (!linkParser.host)){
-		if (!usersReqa.has(user.username) || usersReqa.get(user.username) < parseInt(getTimeNow() - 12)){
-			ircClient.say(`${Settings.osuIrcLogin}`,`${user.username} > ${rewardOPT} ${message}`);
-		}
+	if (rewards.has(user['custom-reward-id']) && (!linkParser.host) && chekTimeout(user.username)){
+		banchoUser.sendMessage(`${user.username} > ${rewardOPT} ${message}`);
 	}
 	switch(message) {
 		case "!нп":
@@ -136,9 +144,9 @@ client.on('message', async (channel, user, message, self) => {
 		case "!nowplaying":
 		case "!map":
 		case "!np":
-			exec(`curl -X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
-				if (stdout !== "null" && !err && isJson(stdout)) {
-					let data = JSON.parse(stdout),
+			request({url: `http://localhost:24050/json`}, (error, response, body) => {
+				if (body !== "null" && !error && isJson(body)) {
+					let data = JSON.parse(body),
 						bm = data.menu.bm,
 						mapd = bm.metadata,
 						mapLink = (bm.id !== 0) ? `(https://osu.ppy.sh/beatmaps/${bm.id})` : `(карты нет на сайте)`;
@@ -150,9 +158,9 @@ client.on('message', async (channel, user, message, self) => {
 		case "!скин":
 		case "!currentskin":
 		case "!skin":
-			exec(`curl -X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
-				if (stdout !== "null" && !err && isJson(stdout)) {
-					let data = JSON.parse(stdout),
+			request({url: `http://localhost:24050/json`}, (error, response, body) => {
+				if (body !== "null" && !error && isJson(body)) {
+					let data = JSON.parse(body),
 						skin = data.menu.skinFolder,
 						allskins = new Map(Settings.skins);
 					if(allskins.has(skin)) {
@@ -201,7 +209,7 @@ client.on('message', async (channel, user, message, self) => {
 									let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mapInfo.bpm * 1.5) : parseInt(mapInfo.bpm),
 										bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
 										starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
-										mapIrc = `[https://osu.ppy.sh/b/${mapInfo.beatmap_id} ${mapInfo.artist} - ${mapInfo.title}] ${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
+										mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] ${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
 									banchoUser.sendMessage(`${rewardOPT} ${user.username} > ${mapIrc}`);
 									client.say(Settings.channel,`/me > ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
 								}
