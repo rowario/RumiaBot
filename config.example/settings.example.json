@@ -9,6 +9,9 @@
 	"osuIrcLogin": "",
 	"osuIrcPass": "",
 	"skins": [
-		["example skins", "link for example skin"],
+		["example skins", "link for example skin"]
+	],
+	"rewards":[
+		["rewardkey", "example reward name"]
 	]
 }

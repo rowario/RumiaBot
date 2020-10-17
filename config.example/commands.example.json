@@ -1,0 +1,15 @@
+[
+    {
+        "aliases": [
+            "Example1"
+        ],
+        "answer": "Just Example Text"
+    },
+    {
+        "aliases":[
+            "Example2",
+            "Эксампле2"
+        ]
+        "answer": "Yep, another Example Text"
+    }
+]
