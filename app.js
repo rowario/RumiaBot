@@ -154,28 +154,16 @@ function osuLinkCheker(linkData) {
 		id;
 	if (["b","beatmaps","beatmapsets"].indexOf(pathArr[1]) + 1) {
 		if (pathArr[1] == 'beatmapsets' && linkData.hash !== null) {
-			return {
-				type: "b",
-				id: parseInt(linkData.hash.split("/")[1])
-			}
+			return { type: "b", id: parseInt(linkData.hash.split("/")[1]) }
 		}else if (["b","beatmaps"].indexOf(pathArr[1]) + 1){
-			return {
-				type: "b",
-				id: parseInt(pathArr[2])
-			}
+			return { type: "b", id: parseInt(pathArr[2]) }
 		}
 	}
 	if (["s","beatmapsets"].indexOf(pathArr[1]) + 1) {
-		return {
-			type: "s",
-			id: parseInt(pathArr[2])
-		};
+		return { type: "s", id: parseInt(pathArr[2]) }
 	}
 	if (["u","users"].indexOf(pathArr[1]) + 1 && ["osu.ppy.sh","old.ppy.sh"].indexOf(linkData.host) + 1) {
-		return {
-			type: "p",
-			id: parseInt(pathArr[2])
-		};
+		return { type: "p", id: parseInt(pathArr[2]) }
 	}
 	return false;
 }
