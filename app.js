@@ -148,7 +148,7 @@ async function checkAchievements (u) {
 	}
 }
 
-function osuLinkHandler(linkData) {
+function osuLinkCheker(linkData) {
 	let pathArr = linkData.path.split("/"),
 		id;
 	if (["b","beatmaps","beatmapsets"].indexOf(pathArr[1]) + 1) {
@@ -167,6 +167,12 @@ function osuLinkHandler(linkData) {
 	if (["s","beatmapsets"].indexOf(pathArr[1]) + 1) {
 		return {
 			type: "s",
+			id: parseInt(pathArr[2])
+		};
+	}
+	if (["u","users"].indexOf(pathArr[1]) + 1 && ["osu.ppy.sh","old.ppy.sh"].indexOf(linkData.host) + 1) {
+		return {
+			type: "p",
 			id: parseInt(pathArr[2])
 		};
 	}
@@ -227,11 +233,10 @@ client.on('message', async (channel, user, message, self) => {
 	let linkParser = url.parse(message);
 
 	if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
-		let beatmapInfo = osuLinkHandler(linkParser);
-		console.log(beatmapInfo);
-		console.log(chekTimeout(user.username));
-		if (["b","s"].indexOf(beatmapInfo.type) + 1 && chekTimeout(user.username)) {
-			let getMapConfig = (beatmapInfo.type == "b") ? { b: beatmapInfo.id } : { s: beatmapInfo.id };
+		let linkInfo = osuLinkCheker(linkParser);
+		console.log(linkInfo);
+		if (["b","s"].indexOf(linkInfo.type) + 1 && chekTimeout(user.username)) {
+			let getMapConfig = (linkInfo.type == "b") ? { b: linkInfo.id } : { s: linkInfo.id };
 			osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
 				if (beatmaps[0]) {
 					lastReq = getTimeNow();
