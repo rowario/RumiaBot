@@ -1,5 +1,4 @@
 const tmi = require('tmi.js'),
-	Level = require('./get_level.js'),
 	Settings = require('./settings.json'),
 	irc = require('irc'),
 	url = require('url'),
@@ -85,39 +84,32 @@ client.on('message', async (channel, user, message, self) => {
 				let pathArr = linkParser.path.split("/"),
 					bId = (pathArr[1] == "b" || pathArr[1] == "beatmaps") ? parseInt(pathArr[2]) : parseInt(linkParser.hash.split("/")[1]);
 				if (bId !== "null" && bId !== 0) {
-					exec(`curl \
-						-X GET "https://osu.ppy.sh/api/get_beatmaps?k=${Settings.osuToken}&b=${bId}"`, async (err,stdout,stderr) => {
+					exec(`curl -X GET "https://osu.ppy.sh/api/get_beatmaps?k=${Settings.osuToken}&b=${bId}"`, async (err,stdout,stderr) => {
 						if (stdout !== "null" && !err && isJson(stdout)) {
 							let data = JSON.parse(stdout);
 							if (data[0]) {
 								lastReq = getTimeNow();
 								usersReqa.set(user.username,getTimeNow());
-								let arrIndexes = ['ez','ht','nf','hd','dt','hr'];
-								let existMap = [],
+								let arrIndexes = ['ez','ht','nf','hd','dt','nc','hr'];
+								 	existMods = [],
 									msgParse = message.replace(["https://"],"");
 								for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMap.indexOf(item) + 1) existMap.push(item);
 								let mI = data[0],
 									newStarRate = 0,
-									modsI = (existMap.length > 0) ? ` +${existMap.join('')}` : ``;
-								let oppaInfo100 = await getOppaiData(bId,modsI,100);
-								let oppaInfo99 = await getOppaiData(bId,modsI,99);
-								let oppaInfo98 = await getOppaiData(bId,modsI,98);
-								let oppaInfo95 = await getOppaiData(bId,modsI,95);
-								let ppAccString = ``;
-								if (oppaInfo100) ppAccString += `100%: ${oppaInfo100.pp}PP, `;
-								if (oppaInfo99) ppAccString += `99%: ${oppaInfo99.pp}PP, `;
-								if (oppaInfo98) ppAccString += `98%: ${oppaInfo98.pp}PP, `;
-								if (oppaInfo95) ppAccString += `95%: ${oppaInfo95.pp}PP, `;
-								ppAccString = ppAccString.substring(0, ppAccString.length - 2);
-								let bpm = (existMap.indexOf('dt') + 1) ? parseInt(mI.bpm * 1.5) : parseInt(mI.bpm),
-									bpmI = (existMap.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
-									ppData = (ppAccString) ? `, ${ppAccString}` : ``,
-									starRate = (oppaInfo100) ? parseFloat(oppaInfo100.stats.sr).toFixed(2) : parseFloat(mI.difficultyrating).toFixed(2),
-									mapSL = `[https://osu.ppy.sh/b/${mI.beatmap_id} ${mI.artist} - ${mI.title} [${mI.version}]]${modsI.toUpperCase()}`,
-									mapTL = `${mI.artist} - ${mI.title} [${mI.version}]`,
-									mapSD = `(${bpmI} BPM, ${starRate} ⭐${ppData})`;
-								ircClient.say(`${Settings.osuIrcLogin}`,`${user.username} > ${rewardOPT} ${mapSL} ${mapSD}`);
-								client.say(Settings.channel,`${user.username} ${mapTL} request added!`);
+									modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
+									oppaiData = [],
+									ppAccString = ``;
+								for await (let item of [100,99,98,95]) {
+									let getOppai = await getOppaiData(bId,modsI,item);
+									oppaiData.push(getOppai);
+									ppAccString += `100%: ${getOppai.pp}PP, `;
+								}
+								let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mI.bpm * 1.5) : parseInt(mI.bpm),
+									bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
+									starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mI.difficultyrating).toFixed(2),
+									mapIrl = `[https://osu.ppy.sh/b/${mI.beatmap_id} ${mI.artist} - ${mI.title}]${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
+								ircClient.say(`${Settings.osuIrcLogin}`,`${rewardOPT} ${user.username} > ${mapIrl}`);
+								client.say(Settings.channel,`${user.username} ${mI.artist} - ${mI.title} реквест добавлен!`);
 							}
 						}
 					});
@@ -126,8 +118,7 @@ client.on('message', async (channel, user, message, self) => {
 		}
 	}
 	if (message === "!currentskin" | message === "!текущийскин" | message === "!skin" | message === "!скин") {
-		exec(`curl \
-			-X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
+		exec(`curl -X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
 			if (stdout !== "null" && !err && isJson(stdout)) {
 				let data = JSON.parse(stdout),
 					skin = data.menu.skinFolder,
