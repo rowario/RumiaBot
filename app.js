@@ -2,6 +2,7 @@ const tmi = require('tmi.js'),
 	Level = require('./get_level.js'),
 	Settings = require('./settings.json'),
 	mongoose = require('mongoose'),
+	request = require('request')
 	irc = require('irc'),
 	url = require('url'),
 	{spawn,exec} = require('child_process'),
@@ -194,9 +195,9 @@ client.on('message', async (channel, user, message, self) => {
 				let pathArr = linkParser.path.split("/"),
 					bId = (pathArr[1] == "b" || pathArr[1] == "beatmaps") ? parseInt(pathArr[2]) : parseInt(linkParser.hash.split("/")[1]);
 				if (bId !== "null" && bId !== 0) {
-					exec(`curl -X GET "https://osu.ppy.sh/api/get_beatmaps?k=${Settings.osuToken}&b=${bId}"`, async (err,stdout,stderr) => {
-						if (stdout !== "null" && !err && isJson(stdout)) {
-							let data = JSON.parse(stdout);
+					request({url: `https://osu.ppy.sh/api/get_beatmaps?k=${Settings.osuToken}&b=${bId}`}, async (error, response, body) => {
+						if (body !== "null" && !error && isJson(body)) {
+							let data = JSON.parse(body);
 							if (data[0]) {
 								lastReq = getTimeNow();
 								usersReqs.set(user.username,getTimeNow());
@@ -246,9 +247,8 @@ client.on('message', async (channel, user, message, self) => {
 		client.say(Settings.channel, `/me > ${u.username} ты можешь отправить 250 сообщений за стрим, и получить 500 опыта PogChamp`);
 	}
 	if (message === "!song" || message === "!трек" || message === "!сонг" || message === "!музыка" || message === "!music") {
-		exec(`curl \
-			-X GET "https://streamdj.ru/api/get_track/${Settings.djid}"`, (err,stdout,stderr) => {
-			if (stdout !== "null" && isJson(stdout)) {
+		request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
+			if (body !== "null" && isJson(body) && !error) {
 				let data = JSON.parse(stdout);
 				client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас играет "${data.title}" (youtube.com/watch?v=${data.yid})`));
 			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас ничего не играет!`));
@@ -256,10 +256,9 @@ client.on('message', async (channel, user, message, self) => {
 	}
 	if (message === "!skip" || message === "!скип") {
 		let maxSkipCount = 5;
-		exec(`curl \
-			-X GET "https://streamdj.ru/api/get_track/${Settings.djid}"`, (err,stdout,stderr) => {
-			if (stdout !== "null" && isJson(stdout)) {
-				let currentSongData = JSON.parse(stdout);
+		request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
+			if (body !== "null" && isJson(body) && !error) {
+				let currentSongData = JSON.parse(body);
 				if (currentSong !== currentSongData.title) {
 					currentSkip.clear();
 					currentSong = currentSongData.title;
@@ -267,10 +266,9 @@ client.on('message', async (channel, user, message, self) => {
 				if (!currentSkip.has(user['user-id'])) {
 					currentSkip.set(user['user-id'],'skip');
 					if (currentSkip.size >= maxSkipCount) {
-						exec(`curl \
-							-X GET "https://streamdj.ru/api/request_skip/${Settings.djid}/${Settings.djtoken}"`, (err,stdout,stderr) => {
-							if (stdout) {
-								let data = JSON.parse(stdout);
+						request({url: `https://streamdj.ru/api/request_skip/${Settings.djid}/${Settings.djtoken}`}, (error, response, body) => {
+							if (!error && body !== "null" && isJson(body)) {
+								let data = JSON.parse(body);
 								currentSkip.clear();
 								client.say(Settings.channel, entities.decode(`/me > "${currentSongData.title}" успешно пропущен PogChamp`));
 							}
@@ -282,33 +280,29 @@ client.on('message', async (channel, user, message, self) => {
 	}
 	if (message === "!banskip" || message === "!банскип") {
 		if (user.badges.moderator || user.badges.broadcaster) {
-			exec(`curl \
-				-X GET "https://streamdj.ru/api/get_track/${Settings.djid}"`, (err,stdout,stderr) => {
-				if (stdout !== "null" && isJson(stdout)) {
-					let currentSongData = JSON.parse(stdout);
-						exec(`curl \
-							-X GET "https://streamdj.ru/api/request_skip/${Settings.djid}/${Settings.djtoken}"`, (err,stdout,stderr) => {
-							if (stdout) {
-								let data = JSON.parse(stdout);
-								currentSkip.clear();
-								client.say(Settings.channel, entities.decode(`/me > ${u.username} успешно пропустил трек, по причине банворд D:`));
-							}
-						});
+			request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
+				if (!error && body !== "null" && isJson(body)) {
+					let currentSongData = JSON.parse(body);
+					request({url: `https://streamdj.ru/api/request_skip/${Settings.djid}/${Settings.djtoken}`}, (error, response, body) => {
+						if (!error && body !== "null" && isJson(body)) {
+							let data = JSON.parse(body);
+							currentSkip.clear();
+							client.say(Settings.channel, entities.decode(`/me > ${u.username} успешно пропустил трек, по причине банворд D:`));
+						}
+					});
 				}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас ничего не играет!`));
 			});
 		}else client.say(Settings.channel, entities.decode(`/me > ${u.username} ты хто?`));
 	}
 	if (message === "!np" || message === "!нп" || message === "!карта" || message === "!map" || message === "!мап") {
-		exec(`curl \
-			-X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
-			if (stdout !== "null" && !err && isJson(stdout)) {
-				let data = JSON.parse(stdout),
+		request({url: `http://localhost:24050/json`}, (error, response, body) => {
+			if (body !== "null" && !error && isJson(body)) {
+				let data = JSON.parse(body),
 					bm = data.menu.bm,
 					mapd = bm.metadata,
 					mapLink = (bm.id !== 0) ? `(https://osu.ppy.sh/beatmaps/${bm.id})` : `(карты нет на сайте)`;
 				client.say(Settings.channel,entities.decode(`/me > ${u.username} Сейчас играет ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`));
 			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Эта команда сейчас недоступна :(`));
-
 		});
 	}
 	if (message === "!iq") {
@@ -332,10 +326,9 @@ client.on('message', async (channel, user, message, self) => {
 		client.say(Settings.channel, entities.decode(msg));
 	}
 	if (message === "!currentskin" | message === "!текущийскин" | message === "!skin" | message === "!скин") {
-		exec(`curl \
-			-X GET "http://localhost:24050/json"`, (err,stdout,stderr) => {
-			if (stdout !== "null" && !err && isJson(stdout)) {
-				let data = JSON.parse(stdout),
+		request({url:`http://localhost:24050/json`}, (error, response, body) => {
+			if (body !== "null" && !error && isJson(body)) {
+				let data = JSON.parse(body),
 					skin = data.menu.skinFolder,
 					allskins = new Map(Settings.skins);
 				if(allskins.has(skin)) {
