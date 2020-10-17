@@ -17,7 +17,7 @@ const tmi = require('tmi.js'),
 			secure: true
 		},
 		identity: {
-			username: 'rowariobot',
+			username: Settings.botname,
 			password: Settings.token
 		},
 		channels: [ Settings.channel ]
