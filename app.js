@@ -85,6 +85,8 @@ function chekTimeout(username) {
 	return true;
 }
 
+// Для работы нужно создать папку beatmaps
+// и добавь все содержимое в ней в gitignore "/beatmaps/*"
 function getOsuFile(beatmap_id) {
 	return new Promise( res => {
 		let file_name = `./beatmaps/${beatmap_id}.osu`;
