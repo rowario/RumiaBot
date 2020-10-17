@@ -126,12 +126,6 @@ async function getOppaiData(beatmap_id,mods,acc) {
 	});
 }
 
-var currentSkip = new Map(),
-	usersMessages = new Map(),
-	usersReqa = new Map(),
-	lastReq = 0,
-	currentSong = "";
-
 function isJson(str) {
 	try {
 		JSON.parse(str);
