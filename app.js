@@ -108,10 +108,10 @@ client.on('message', async (channel, user, message, self) => {
 									modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
 									oppaiData = [],
 									ppAccString = ``;
-								for await (let item of [100,99,98,95]) {
-									let getOppai = await getOppaiData(bId,modsI,item);
+								for await (let acc of [100,99,98,95]) {
+									let getOppai = await getOppaiData(bId,modsI,acc);
 									oppaiData.push(getOppai);
-									ppAccString += `100%: ${getOppai.pp}PP, `;
+									ppAccString += `${acc}%: ${getOppai.pp}PP, `;
 								}
 								let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mI.bpm * 1.5) : parseInt(mI.bpm),
 									bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
