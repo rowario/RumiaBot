@@ -1,6 +1,6 @@
 const tmi = require('tmi.js'),
-	Settings = require('./settings.json'),
-	Commandlist = require('./commandlist.json'),
+	Settings = require('./config/settings.json'),
+	Commandlist = require('./config/commands.json'),
 	request = require('request');
 	irc = require('irc'),
 	url = require('url'),
@@ -148,13 +148,10 @@ client.on('message', async (channel, user, message, self) => {
 	var osuUrl = 'https://osu.ppy.sh/api/';
 	var message = message.toLowerCase();
 	let linkParser = url.parse(message);
-	// TODO: Перенести массив с ревардами в конфиг (Settings.rewards)
-	let rewards = new Map([
-		["626ba9d4-3478-442d-9c1d-56af03af9f77", "Играть с FL"],
-		["30b2e45b-6626-454c-ad13-11517c573dd0", "Играть с выкл. монитором"]
-	]),
-	rewardOPT = (rewards.has(user['custom-reward-id'])) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${rewards.get(user['custom-reward-id'])} |` : "";
-	if (rewards.has(user['custom-reward-id']) && (!linkParser.host) && chekTimeout(user.username)){
+	let osureward = Settings.rewards.osu,
+		twitchreward = Settings.rewards.twitch,
+		rewardOPT = (osureward.has(user['custom-reward-id'])) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${osureward.get(user['custom-reward-id'])} |` : "";
+	if (osureward.has(user['custom-reward-id']) && (!linkParser.host) && chekTimeout(user.username)){
 		banchoUser.sendMessage(`${user.username} > ${rewardOPT} ${message}`);
 	}
 	switch(message) {
@@ -235,8 +232,9 @@ client.on('message', async (channel, user, message, self) => {
 								}
 							});
 							break;
-						case "p":
-							// Место под проверку профилей
+						case "u":
+						case "users":
+							break;
 						default: break;
 					}
 				}
