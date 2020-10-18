@@ -199,7 +199,6 @@ client.on('message', async (channel, user, message, self) => {
 		default:
 			if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
 				let linkInfo = osuLinkCheker(linkParser);
-				console.log(linkInfo);
 				if (linkInfo) {
 					switch (linkInfo.type) {
 						case "s":
