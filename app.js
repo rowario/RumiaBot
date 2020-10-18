@@ -173,6 +173,16 @@ client.on('message', async (channel, user, message, self) => {
 	if (osureward.has(rid) && (!linkParser.host) && chekTimeout(user.username)){
 		banchoUser.sendMessage(`${user.username} > ${rewardOPT} ${message}`);
 	}
+	if (message.match(/!iq/gi)) {
+		let selfCheck = (message.match(/@/gi) && message.trim().replace(/@|!iq/gi,"") !== `${user.username}`) ? false : true,
+			checkUser = (selfCheck) ? user.username : message.trim().replace(/@|!iq/gi,"");
+		let randIq = randomInteger(1,250);
+		if (checkUser === "rowario") randIq = 99999999999999999;
+		client.say(
+			Settings.channel,
+			entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq ${checkUser}, у него ${randIq}`)
+		);
+	}
 	switch(message) {
 		case "!нп":
 		case "!мап":
@@ -205,12 +215,6 @@ client.on('message', async (channel, user, message, self) => {
 				}
 				else client.say(Settings.channel, entities.decode(`/me > Команда недосутпна :(`));
 			});
-			break;
-		case "!iq":
-			let randIq = randomInteger(1,250);
-			if (user.username === "rowario") randIq = 99999999999999999;
-			if (user.username === "robloxxa0_0") randIq = -1;
-			client.say(Settings.channel, entities.decode(`/me > ${user.username} твой IQ ${randIq}`));
 			break;
 		default:
 			// new
