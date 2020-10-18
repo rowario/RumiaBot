@@ -1,7 +1,6 @@
 const tmi = require('tmi.js'),
 	Settings = require('./config/settings.json'),
 	Commandlist = require('./config/commands.json'),
-	irc = require('irc'),
 	url = require('url'),
 	fs = require('fs'),
 	Banchojs = require("bancho.js"),
