@@ -91,6 +91,7 @@ function randomInteger(min, max) {
 	return Math.round(rand);
 }
 
+// new
 function getMods(message) {
 	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
 		existMods = [],
@@ -99,6 +100,7 @@ function getMods(message) {
 	return (existMods.length > 0) ? ` +${existMods.join('')}` : ``;
 }
 
+// new
 function getBpm(baseBpm,message) {
 	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
 		existMods = [],
@@ -211,6 +213,7 @@ client.on('message', async (channel, user, message, self) => {
 			client.say(Settings.channel, entities.decode(`/me > ${user.username} твой IQ ${randIq}`));
 			break;
 		default:
+			// new
 			if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
 				let linkInfo = osuLinkCheker(linkParser);
 				if (linkInfo && chekTimeout(user.username)) {
