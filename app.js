@@ -173,6 +173,7 @@ client.on('message', async (channel, user, message, self) => {
 	if (osureward.has(rid) && (!linkParser.host) && chekTimeout(user.username)){
 		banchoUser.sendMessage(`${user.username} > ${rewardOPT} ${message}`);
 	}
+	// new
 	if (message.match(/!iq/gi)) {
 		let selfCheck = (message.match(/@/gi) && message.trim().replace(/@|!iq/gi,"") !== `${user.username}`) ? false : true,
 			checkUser = (selfCheck) ? user.username : message.trim().replace(/@|!iq/gi,"");
