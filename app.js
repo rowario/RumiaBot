@@ -174,6 +174,24 @@ function chekTimeout(username) {
 	return true;
 }
 
+function getMods(message) {
+	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
+		existMods = [],
+		msgParse = message.replace(["https://"],"");
+	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
+	return (existMods.length > 0) ? ` +${existMods.join('')}` : ``;
+}
+
+function getBpm(baseBpm,message) {
+	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
+		existMods = [],
+		msgParse = message.replace(["https://"],"");
+	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
+	let dtCheck = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(baseBpm * 1.5) : parseInt(baseBpm),
+		htCheck = (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
+	return htCheck;
+}
+
 function getOsuFile(beatmap_id) {
 	return new Promise( res => {
 		let file_name = `./beatmaps/${beatmap_id}.osu`;
@@ -249,24 +267,17 @@ client.on('message', async (channel, user, message, self) => {
 						if (beatmaps[0]) {
 							lastReq = getTimeNow();
 							usersReqs.set(user.username,getTimeNow());
-							let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
-								existMods = [],
-								msgParse = message.replace(["https://"],"");
-							for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
 							let mapInfo = beatmaps[0],
-								newStarRate = 0,
-								modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
 								oppaiData = [],
-								ppAccString = ``;
+								ppAccString = [];
 							for await (let acc of [95,98,99,100]) {
-								let getOppai = await getOppaiData(mapInfo.id,modsI,acc);
+								let getOppai = await getOppaiData(mapInfo.id,getMods(message),acc);
 								oppaiData.push(getOppai);
-								ppAccString += `${acc}%: ${getOppai.pp}PP, `;
+								ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
 							}
-							let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mapInfo.bpm * 1.5) : parseInt(mapInfo.bpm),
-								bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
+							let bpm = getBpm(mapInfo.bpm,message),
 								starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
-								mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] [https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC] ${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
+								mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] [https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC] ${getMods(message).toUpperCase()} (${bpm} BPM, ${starRate} ⭐${ppAccString.join(', ')})`;
 							banchoUser.sendMessage(`${user.username} > ${mapIrc}`);
 							client.say(Settings.channel,`/me > ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
 						}
