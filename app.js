@@ -1,9 +1,9 @@
 const tmi = require('tmi.js'),
 	Settings = require('./config/settings.json'),
 	Commandlist = require('./config/commands.json'),
-	request = require('request');
 	irc = require('irc'),
 	url = require('url'),
+	fs = require('fs'),
 	Banchojs = require("bancho.js"),
 	osu = require('node-osu'),
 	request = require('request'),
@@ -141,17 +141,16 @@ function isJson(str) {
 	return true;
 }
 
-
 client.on('message', async (channel, user, message, self) => {
 	if(self) return;
 	var uid = user['user-id'];
-	var osuUrl = 'https://osu.ppy.sh/api/';
+		rid = user['custom-reward-id']
 	var message = message.toLowerCase();
 	let linkParser = url.parse(message);
-	let osureward = Settings.rewards.osu,
-		twitchreward = Settings.rewards.twitch,
-		rewardOPT = (osureward.has(user['custom-reward-id'])) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${osureward.get(user['custom-reward-id'])} |` : "";
-	if (osureward.has(user['custom-reward-id']) && (!linkParser.host) && chekTimeout(user.username)){
+	let osureward = new Map(Settings.rewards.osu),
+		twitchreward = new Map(Settings.rewards.twitch),
+		rewardOPT = (osureward.has(rid)) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${osureward.get(rid)} |` : "";
+	if (osureward.has(rid) && (!linkParser.host) && chekTimeout(user.username)){
 		banchoUser.sendMessage(`${user.username} > ${rewardOPT} ${message}`);
 	}
 	switch(message) {
@@ -200,6 +199,7 @@ client.on('message', async (channel, user, message, self) => {
 		default:
 			if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
 				let linkInfo = osuLinkCheker(linkParser);
+				console.log(linkInfo);
 				if (linkInfo) {
 					switch (linkInfo.type) {
 						case "s":
@@ -228,7 +228,7 @@ client.on('message', async (channel, user, message, self) => {
 										starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
 										mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] ${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
 									banchoUser.sendMessage(`${rewardOPT} ${user.username} > ${mapIrc}`);
-									client.say(Settings.channel,`/me > ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
+									client.say(Settings.channel,`/me > ${rewardOPT} ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
 								}
 							});
 							break;
@@ -239,6 +239,8 @@ client.on('message', async (channel, user, message, self) => {
 					}
 				}
 			}
+			//TODO: Добавить возможность написания кастомный команд
+			//TODO: Возможно добавить создание/удаление/редактирование команд
 			break;
 	}
 });
