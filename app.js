@@ -174,6 +174,11 @@ function chekTimeout(username) {
 	return true;
 }
 
+function randomInteger(min, max) {
+	let rand = min - 0.5 + Math.random() * (max - min + 1);
+	return Math.round(rand);
+}
+
 function getMods(message) {
 	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
 		existMods = [],
@@ -366,14 +371,15 @@ client.on('message', async (channel, user, message, self) => {
 			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Эта команда сейчас недоступна :(`));
 		});
 	}
-	if (message === "!iq") {
-		function randomInteger(min, max) {
-			let rand = min - 0.5 + Math.random() * (max - min + 1);
-			return Math.round(rand);
-		}
+	if (message.match(/!iq/gi)) {
+		let selfCheck = (message.match(/@/gi) && message.trim().replace(/@|!iq/gi,"") !== `${u.username}`) ? false : true,
+			checkUser = (selfCheck) ? user.username : message.trim().replace(/@|!iq/gi,"");
 		let randIq = randomInteger(1,250);
-		if (u.username === "rowario") randIq = 99999999999999999;
-		client.say(Settings.channel, entities.decode(`/me > ${u.username} твой IQ ${randIq}`));
+		if (checkUser === "rowario") randIq = 99999999999999999;
+		client.say(
+			Settings.channel,
+			entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq ${checkUser}, у него ${randIq}`)
+		);
 	}
 	if (message === "!leaderboard" || message === "!лидерборд" || message === "!top" || message === "!топ") {
 		let topUsers = await getLeaderboard();

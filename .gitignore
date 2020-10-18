@@ -3,3 +3,4 @@ settings.json
 .gitignore
 test.js
 /beatmaps/*
+/config/*
