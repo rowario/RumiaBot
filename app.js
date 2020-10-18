@@ -175,11 +175,12 @@ client.on('message', async (channel, user, message, self) => {
 	}
 	// new
 	if (message.match(/!iq/gi)) {
-		let selfCheck = (message.match(/@/gi) && message.trim().replace(/@|!iq/gi,"") !== `${user.username}`) ? false : true,
-			msgArr = message.split(" "),
+		let msgArr = message.split(" "),
+			selfCheck = (message.match(/@/gi) && msgArr[1].replace(/@/gi,"") !== `${user.username}`) ? false : true,
 			checkUser = (selfCheck) ? user.username : msgArr[1];
 		let randIq = randomInteger(1,250);
 		if (checkUser === "rowario") randIq = 99999999999999999;
+		if (checkUser === "robloxxa0_0") randIq = -1;
 		client.say(
 			Settings.channel,
 			entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq у ${checkUser}, у него ${randIq}`)
