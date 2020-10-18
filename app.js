@@ -38,10 +38,6 @@ banchoIrc.connect().then(() => {
 })
 client.connect();
 
-var usersMessages = new Map(),
-	usersReqs = new Map(),
-	lastReq = 0;
-
 function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000)); }
 
 function isJson(str) {
@@ -88,6 +84,29 @@ function chekTimeout(username) {
 	if (usersReqs.has(username) && usersReqs.get(username) > parseInt(getTimeNow() - 20)) return false;
 	if (lastReq > parseInt(getTimeNow() - 5)) return false;
 	return true;
+}
+
+function randomInteger(min, max) {
+	let rand = min - 0.5 + Math.random() * (max - min + 1);
+	return Math.round(rand);
+}
+
+function getMods(message) {
+	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
+		existMods = [],
+		msgParse = message.replace(["https://"],"");
+	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
+	return (existMods.length > 0) ? ` +${existMods.join('')}` : ``;
+}
+
+function getBpm(baseBpm,message) {
+	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
+		existMods = [],
+		msgParse = message.replace(["https://"],"");
+	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
+	let dtCheck = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(baseBpm * 1.5) : parseInt(baseBpm),
+		htCheck = (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
+	return htCheck;
 }
 
 // Для работы нужно создать папку beatmaps
@@ -186,10 +205,6 @@ client.on('message', async (channel, user, message, self) => {
 			});
 			break;
 		case "!iq":
-			function randomInteger(min, max) {
-				let rand = min - 0.5 + Math.random() * (max - min + 1);
-				return Math.round(rand);
-			}
 			let randIq = randomInteger(1,250);
 			if (user.username === "rowario") randIq = 99999999999999999;
 			if (user.username === "robloxxa0_0") randIq = -1;
@@ -198,7 +213,7 @@ client.on('message', async (channel, user, message, self) => {
 		default:
 			if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
 				let linkInfo = osuLinkCheker(linkParser);
-				if (linkInfo) {
+				if (linkInfo && chekTimeout(user.username)) {
 					switch (linkInfo.type) {
 						case "s":
 						case "b":
@@ -207,32 +222,24 @@ client.on('message', async (channel, user, message, self) => {
 								if (beatmaps[0]) {
 									lastReq = getTimeNow();
 									usersReqs.set(user.username,getTimeNow());
-									let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
-										existMods = [],
-										msgParse = message.replace(["https://"],"");
-									for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
 									let mapInfo = beatmaps[0],
-										newStarRate = 0,
-										modsI = (existMods.length > 0) ? ` +${existMods.join('')}` : ``,
 										oppaiData = [],
-										ppAccString = ``;
-									for await (let acc of [100,99,98,95]) {
-										let getOppai = await getOppaiData(mapInfo.id,modsI,acc);
+										ppAccString = [];
+									for await (let acc of [95,98,99,100]) {
+										let getOppai = await getOppaiData(mapInfo.id,getMods(message),acc);
 										oppaiData.push(getOppai);
-										ppAccString += `${acc}%: ${getOppai.pp}PP, `;
+										ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
 									}
-									let bpm = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(mapInfo.bpm * 1.5) : parseInt(mapInfo.bpm),
-										bpmI = (existMods.indexOf('ht') + 1) ? parseInt(bpm * 0.75) : parseInt(bpm),
+									let bpm = getBpm(mapInfo.bpm,message),
 										starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
-										mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] ${modsI.toUpperCase()} (${bpmI} BPM, ${starRate} ⭐${ppAccString.substring(0, ppAccString.length - 2)})`;
-									banchoUser.sendMessage(`${rewardOPT} ${user.username} > ${mapIrc}`);
+										mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] [https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC] ${getMods(message).toUpperCase()} (${bpm} BPM, ${starRate} ⭐${ppAccString.join(', ')})`;
+									banchoUser.sendMessage(`${user.username} > ${mapIrc}`);
 									client.say(Settings.channel,`/me > ${rewardOPT} ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
 								}
 							});
 							break;
-						case "u":
-						case "users":
-							break;
+						case "s":
+							// Место под проверку профилей
 						default: break;
 					}
 				}
