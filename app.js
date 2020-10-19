@@ -51,6 +51,7 @@ const User = mongoose.model('users', { id: Number, username: String, display_nam
 	count_messages: Number, level: Number, rank: Number, stream_messages: Number });
 const Active = mongoose.model('active', { id: Number, meter: Number, username: String });
 
+
 // USER
 async function getUser(user_id) { var u = await User.findOne({ id: user_id }); return u }
 async function updateExpirience(user_id, exp) { await User.findOneAndUpdate({ id: user_id }, { $inc: { expirience: exp } } ).then((e) => { }) }
