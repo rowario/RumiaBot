@@ -1,6 +1,7 @@
 const tmi = require('tmi.js'),
 	Level = require('./get_level.js'),
-	Settings = require('./settings.json'),
+	Settings = require('./config/settings.json'),
+	Commandlist = require('./config/commands.json'),
 	Banchojs = require("bancho.js"),
 	mongoose = require('mongoose'),
 	url = require('url'),
@@ -30,11 +31,11 @@ const tmi = require('tmi.js'),
 	banchoIrc = new Banchojs.BanchoClient({ username: Settings.osuIrcLogin, password: Settings.osuIrcPass }),
 	banchoUser = banchoIrc.getSelf();
 
-var currentSkip = new Map(),
-	usersMessages = new Map(),
-	usersReqs = new Map(),
-	lastReq = 0,
-	currentSong = "";
+	var currentSkip = new Map(),
+		usersMessages = new Map(),
+		usersReqs = new Map(),
+		lastReq = 0,
+		currentSong = "";
 
 mongoose.connect(Settings.database,{
 	useNewUrlParser: true,
@@ -69,6 +70,16 @@ async function upActive(uid) { var ac = await Active.updateOne({ id: uid },{ met
 async function decActive(uid) { var ac = await Active.updateOne({ id: uid }, { $inc: { meter: -1 } }); }
 async function deleteActive(uid) { var ac = await Active.deleteOne({ id: uid }); }
 // ACTIVE
+
+function updateConfig(file,rewrite) {
+	fs.readFile(file,function (err,data) {
+		if (err) throw err;
+		let jsonData = JSON.parse(data);
+		for (let [key, value] of Object.entries(jsonData)) {
+			rewrite[key] = value;
+		}
+	})
+}
 
 function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000)); }
 
@@ -145,7 +156,7 @@ async function checkAchievements (u) {
 	if (u.stream_messages >= 250) {
 		updateExpirience(u.id,500);
 		clearAchievements(u.id);
-		client.say(Settings.channel, `/me > ${u.username} отправил 250 сообщений за стрим, за это ему начисленно 500 опыта PogChamp`);
+		client.say(Settings.channel, `/me > ${user.username} отправил 250 сообщений за стрим, за это ему начисленно 500 опыта PogChamp`);
 	}
 }
 
@@ -188,7 +199,7 @@ function getMods(message) {
 }
 
 function getBpm(baseBpm,message) {
-	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
+	let arrIndexes = ['dt','nc','ht'],
 		existMods = [],
 		msgParse = message.replace(["https://"],"");
 	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
@@ -236,18 +247,22 @@ async function getOppaiData(beatmap_id,mods,acc) {
 	});
 }
 
-client.on('message', async (channel, user, message, self) => {
+client.on('message', async (channel, user, msg, self) => {
 	if(self) return;
+	updateConfig('./config/settings.json',Settings);
+	updateConfig('./config/commands.json',Commandlist);
 	var uid = user['user-id'];
 	var u = await getUser(uid);
-	var message = message.toLowerCase();
+	let message = msg.toLowerCase(),
+		messageArr = message.split(" ");
+
 	if (!u) {
 		u = new User({ id: uid, username: user.username, display_name: user['display-name'], reg_time: (new Date()).getTime(),
 		expirience: 0, count_messages: 0, level: 0, rank: 0,stream_messages: 0 })
 		await u.save()
 	}
 
-	if (u.username !== user.username) {
+	if (user.username !== user.username) {
 		updateUsername(uid,user);
 	}
 
@@ -255,155 +270,188 @@ client.on('message', async (channel, user, message, self) => {
 
 	checkAchievements(u);
 
-	if (usersMessages.has(u.username) && usersMessages.get(u.username) >= parseInt(getTimeNow() - 2)) decreaseExpirience(u.id);
+	if (usersMessages.has(user.username) && usersMessages.get(user.username) >= parseInt(getTimeNow() - 2)) decreaseExpirience(u.id);
 
-	usersMessages.set(u.username,getTimeNow());
+	usersMessages.set(user.username,getTimeNow());
+
+	if (user.username != 'moobot') updateActivity(u);
 
 	let linkParser = url.parse(message);
 
-	if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
-		let linkInfo = osuLinkCheker(linkParser);
-		if (linkInfo && chekTimeout(user.username)) {
-			switch (linkInfo.type) {
-				case "s":
-				case "b":
-					let getMapConfig = (linkInfo.type == "b") ? { b: linkInfo.id } : { s: linkInfo.id };
-					osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
-						if (beatmaps[0]) {
-							lastReq = getTimeNow();
-							usersReqs.set(user.username,getTimeNow());
-							let mapInfo = beatmaps[0],
-								oppaiData = [],
-								ppAccString = [];
-							for await (let acc of [95,98,99,100]) {
-								let getOppai = await getOppaiData(mapInfo.id,getMods(message),acc);
-								oppaiData.push(getOppai);
-								ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
-							}
-							let bpm = getBpm(mapInfo.bpm,message),
-								starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
-								mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] [https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC] ${getMods(message).toUpperCase()} (${bpm} BPM, ${starRate} ⭐${ppAccString.join(', ')})`;
-							banchoUser.sendMessage(`${user.username} > ${mapIrc}`);
-							client.say(Settings.channel,`/me > ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
-						}
-					});
-					break;
-				case "s":
-					// Место под проверку профилей
-				default: break;
-			}
-		}
-	}
-
-	if (user.username != 'moobot') {
-		updateActivity(u);
-		if (message === "!lvl") {
-			client.say(Settings.channel, `/me > ${user.username} твой уровень ${Level.getLevel(u.expirience)}, у тебя ${parseInt(u.expirience)} опыта!`);
-		}
-	}
-	if (message === "!rank" || message === "!ранк") {
-		client.say(Settings.channel, `/me > ${u.username} твой ранк #${u.rank}`);
-	}
-	if (message === "!count" || message === "!каунт") {
-		client.say(Settings.channel, `/me > ${u.username} отправил ${u.count_messages} сообщений BloodTrail`);
-	}
-	if (message === "!achievement" || message === "!ачивка") {
-		let countToAchiv = parseInt(500 - u.stream_messages);
-		// client.say(Settings.channel, `/me > ${u.username} ты можешь отправить еще ${countToAchiv} сообщений за стрим, и получить 1000 опыта PogChamp`);
-		client.say(Settings.channel, `/me > ${u.username} ты можешь отправить 250 сообщений за стрим, и получить 500 опыта PogChamp`);
-	}
-	if (message === "!song" || message === "!трек" || message === "!сонг" || message === "!музыка" || message === "!music") {
-		request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
-			if (body !== "null" && isJson(body) && !error) {
-				let data = JSON.parse(stdout);
-				client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас играет "${data.title}" (youtube.com/watch?v=${data.yid})`));
-			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас ничего не играет!`));
-		});
-	}
-	if (message === "!skip" || message === "!скип") {
-		let maxSkipCount = 5;
-		request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
-			if (body !== "null" && isJson(body) && !error) {
-				let currentSongData = JSON.parse(body);
-				if (currentSong !== currentSongData.title) {
-					currentSkip.clear();
-					currentSong = currentSongData.title;
-				}
-				if (!currentSkip.has(user['user-id'])) {
-					currentSkip.set(user['user-id'],'skip');
-					if (currentSkip.size >= maxSkipCount) {
+	switch (messageArr[0]) {
+		case "!rank":
+		case "!ранк":
+			client.say(Settings.channel, `/me > ${user.username} твой ранк #${u.rank}`);
+			break;
+		case "!count":
+		case "!каунт":
+			client.say(Settings.channel, `/me > ${user.username} отправил ${u.count_messages} сообщений BloodTrail`);
+			break;
+		case "!achievement":
+		case "!ачивка":
+			let countToAchiv = parseInt(500 - u.stream_messages);
+			// client.say(Settings.channel, `/me > ${user.username} ты можешь отправить еще ${countToAchiv} сообщений за стрим, и получить 1000 опыта PogChamp`);
+			client.say(Settings.channel, `/me > ${user.username} ты можешь отправить 250 сообщений за стрим, и получить 500 опыта PogChamp`);
+			break;
+		case "!song":
+		case "!music":
+		case "!трек":
+		case "!сонг":
+		case "!музыка":
+			request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
+				if (body !== "null" && isJson(body) && !error) {
+					let data = JSON.parse(stdout);
+					client.say(Settings.channel, entities.decode(`/me > ${user.username} Сейчас играет "${data.title}" (youtube.com/watch?v=${data.yid})`));
+				}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Сейчас ничего не играет!`));
+			});
+			break;
+		case "!skip":
+		case "!скип":
+			let maxSkipCount = 5;
+			request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
+				if (body !== "null" && isJson(body) && !error) {
+					let currentSongData = JSON.parse(body);
+					if (currentSong !== currentSongData.title) {
+						currentSkip.clear();
+						currentSong = currentSongData.title;
+					}
+					if (!currentSkip.has(user['user-id'])) {
+						currentSkip.set(user['user-id'],'skip');
+						if (currentSkip.size >= maxSkipCount) {
+							request({url: `https://streamdj.ru/api/request_skip/${Settings.djid}/${Settings.djtoken}`}, (error, response, body) => {
+								if (!error && body !== "null" && isJson(body)) {
+									let data = JSON.parse(body);
+									currentSkip.clear();
+									client.say(Settings.channel, entities.decode(`/me > "${currentSongData.title}" успешно пропущен PogChamp`));
+								}
+							});
+						}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Твой голос учтен, голосов для пропуска ${currentSkip.size}/${maxSkipCount}`));
+					}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Ты уже проголосовал за пропуск этого трека!`));
+				}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Сейчас ничего не играет!`));
+			});
+			break;
+		case "!banskip":
+		case "!банскип":
+			if (user.badges.moderator || user.badges.broadcaster) {
+				request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
+					if (!error && body !== "null" && isJson(body)) {
+						let currentSongData = JSON.parse(body);
 						request({url: `https://streamdj.ru/api/request_skip/${Settings.djid}/${Settings.djtoken}`}, (error, response, body) => {
 							if (!error && body !== "null" && isJson(body)) {
 								let data = JSON.parse(body);
 								currentSkip.clear();
-								client.say(Settings.channel, entities.decode(`/me > "${currentSongData.title}" успешно пропущен PogChamp`));
+								client.say(Settings.channel, entities.decode(`/me > ${user.username} успешно пропустил трек, по причине банворд D:`));
 							}
 						});
-					}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Твой голос учтен, голосов для пропуска ${currentSkip.size}/${maxSkipCount}`));
-				}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Ты уже проголосовал за пропуск этого трека!`));
-			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас ничего не играет!`));
-		});
-	}
-	if (message === "!banskip" || message === "!банскип") {
-		if (user.badges.moderator || user.badges.broadcaster) {
-			request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
-				if (!error && body !== "null" && isJson(body)) {
-					let currentSongData = JSON.parse(body);
-					request({url: `https://streamdj.ru/api/request_skip/${Settings.djid}/${Settings.djtoken}`}, (error, response, body) => {
-						if (!error && body !== "null" && isJson(body)) {
-							let data = JSON.parse(body);
-							currentSkip.clear();
-							client.say(Settings.channel, entities.decode(`/me > ${u.username} успешно пропустил трек, по причине банворд D:`));
-						}
-					});
-				}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас ничего не играет!`));
+					}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Сейчас ничего не играет!`));
+				});
+			}else client.say(Settings.channel, entities.decode(`/me > ${user.username} ты хто?`));
+			break;
+		case "!np":
+		case "!нп":
+		case "!map":
+		case "!мап":
+		case "!карта":
+			request({url: `http://localhost:24050/json`}, (error, response, body) => {
+				if (body !== "null" && !error && isJson(body)) {
+					let data = JSON.parse(body),
+						bm = data.menu.bm,
+						mapd = bm.metadata,
+						mapLink = (bm.id !== 0) ? `(https://osu.ppy.sh/beatmaps/${bm.id})` : `(карты нет на сайте)`;
+					client.say(Settings.channel,entities.decode(`/me > ${user.username} Сейчас играет ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`));
+				}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Эта команда сейчас недоступна :(`));
 			});
-		}else client.say(Settings.channel, entities.decode(`/me > ${u.username} ты хто?`));
-	}
-	if (message === "!np" || message === "!нп" || message === "!карта" || message === "!map" || message === "!мап") {
-		request({url: `http://localhost:24050/json`}, (error, response, body) => {
-			if (body !== "null" && !error && isJson(body)) {
-				let data = JSON.parse(body),
-					bm = data.menu.bm,
-					mapd = bm.metadata,
-					mapLink = (bm.id !== 0) ? `(https://osu.ppy.sh/beatmaps/${bm.id})` : `(карты нет на сайте)`;
-				client.say(Settings.channel,entities.decode(`/me > ${u.username} Сейчас играет ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`));
-			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Эта команда сейчас недоступна :(`));
-		});
-	}
-	if (message.match(/!iq/gi)) {
-		let selfCheck = (message.match(/@/gi) && message.trim().replace(/@|!iq/gi,"") !== `${u.username}`) ? false : true,
-			checkUser = (selfCheck) ? user.username : message.trim().replace(/@|!iq/gi,"");
-		let randIq = randomInteger(1,250);
-		if (checkUser === "rowario") randIq = 99999999999999999;
-		client.say(
-			Settings.channel,
-			entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq ${checkUser}, у него ${randIq}`)
-		);
-	}
-	if (message === "!leaderboard" || message === "!лидерборд" || message === "!top" || message === "!топ") {
-		let topUsers = await getLeaderboard();
-		let msg = `/me > `;
-		await topUsers.forEach((item, i) => {
-			if (i < 15) {
-				let adder = (i == 0) ? "" : "|";
-				msg += `${adder} #${i+1} ${item.display_name} (${item.level} lvl) `;
+			break;
+		case "!iq":
+			let selfCheck = (message.match(/@/gi) && messageArr[1].replace(/@/gi,"") !== `${user.username}`) ? false : true,
+				checkUser = (selfCheck) ? user.username : messageArr[1];
+			let randIq = randomInteger(1,250);
+			if (checkUser === "rowario") randIq = 99999999999999999;
+			client.say(
+				Settings.channel,
+				entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq у ${checkUser}, у него ${randIq}`)
+			);
+			break;
+		case "!leaderboard":
+		case "!лидерборд":
+		case "!top":
+		case "!топ":
+			let topUsers = await getLeaderboard(),
+				msg = `/me > `;
+			await topUsers.forEach((item, i) => {
+				if (i < 15) {
+					let adder = (i == 0) ? "" : "|";
+					msg += `${adder} #${i+1} ${item.display_name} (${item.level} lvl) `;
+				}
+			});
+			client.say(Settings.channel, entities.decode(msg));
+			break;
+		case "!currentskin":
+		case "!текущийскин":
+		case "!skin":
+		case "!скин":
+			request({url:`http://localhost:24050/json`}, (error, response, body) => {
+				if (body !== "null" && !error && isJson(body)) {
+					let data = JSON.parse(body),
+						skin = data.menu.skinFolder,
+						allskins = new Map(Settings.skins);
+					if(allskins.has(skin)) {
+						client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (${allskins.get(skin)})`))
+					} else client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (Not Uploaded)`));
+				}
+				else client.say(Settings.channel, entities.decode(`Команда недосутпна :(`));
+			});
+			break;
+		case "!lvl":
+		case "!лвл":
+		case "!level":
+		case "!уровень":
+			client.say(Settings.channel, `/me > ${user.username} твой уровень ${Level.getLevel(u.expirience)}, у тебя ${parseInt(u.expirience)} опыта!`);
+			break;
+		default:
+			if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
+				let linkInfo = osuLinkCheker(linkParser);
+				if (linkInfo && chekTimeout(user.username)) {
+					switch (linkInfo.type) {
+						case "s":
+						case "b":
+							let getMapConfig = (linkInfo.type == "b") ? { b: linkInfo.id } : { s: linkInfo.id };
+							osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
+								if (beatmaps[0]) {
+									lastReq = getTimeNow();
+									usersReqs.set(user.username,getTimeNow());
+									let mapInfo = beatmaps[0],
+										oppaiData = [],
+										ppAccString = [];
+									for await (let acc of [95,98,99,100]) {
+										let getOppai = await getOppaiData(mapInfo.id,getMods(message),acc);
+										oppaiData.push(getOppai);
+										ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
+									}
+									let bpm = getBpm(mapInfo.bpm,message),
+										starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
+										mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] [https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC] ${getMods(message).toUpperCase()} (${bpm} BPM, ${starRate} ⭐${ppAccString.join(', ')})`;
+									banchoUser.sendMessage(`${user.username} > ${mapIrc}`);
+									client.say(Settings.channel,`/me > ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
+								}
+							});
+							break;
+						case "s":
+							// Место под проверку профилей
+						default: break;
+					}
+				}
 			}
-		});
-		client.say(Settings.channel, entities.decode(msg));
-	}
-	if (message === "!currentskin" | message === "!текущийскин" | message === "!skin" | message === "!скин") {
-		request({url:`http://localhost:24050/json`}, (error, response, body) => {
-			if (body !== "null" && !error && isJson(body)) {
-				let data = JSON.parse(body),
-					skin = data.menu.skinFolder,
-					allskins = new Map(Settings.skins);
-				if(allskins.has(skin)) {
-					client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (${allskins.get(skin)})`))
-				} else client.say(Settings.channel,entities.decode(`Текущий скин: ${skin} (Not Uploaded)`));
+			for (command of Commandlist) {
+				if (command.aliases.indexOf(message) + 1) {
+					if (command.settings.modonly && !(user.badges.broadcaster|| user.badges.moderator)) break;
+					let mention = (command.settings.mention) ? `${user.username}` : ``;
+					client.say(Settings.channel, `/me > ${mention} ${command.answer}`);
+					break;
+				}
 			}
-			else client.say(Settings.channel, entities.decode(`Команда недосутпна :(`));
-		});
+			// TODO: Добавление удаление комманд
+		break;
 	}
 });
 
