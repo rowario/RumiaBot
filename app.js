@@ -49,19 +49,17 @@ function isJson(str) {
 	return true;
 }
 
-setInterval(function () {
-	updateConfig('./config/settings.json',Settings);
-	updateConfig('./config/commands.json',Commandlist);
-},2000);
-
 function updateConfig(file,rewrite) {
-	fs.readFile(file,function (err,data) {
-		if (err) throw err;
-		let jsonData = JSON.parse(data);
-		for (let [key, value] of Object.entries(jsonData)) {
-			rewrite[key] = value;
-		}
-	})
+	return new Promise( resolve => {
+		fs.readFile(file,function (err,data) {
+			if (err) throw err;
+			let jsonData = JSON.parse(data);
+			for (let [key, value] of Object.entries(jsonData)) {
+				rewrite[key] = value;
+			}
+			resolve();
+		})
+	});
 }
 
 function osuLinkCheker(linkData) {
@@ -176,32 +174,24 @@ function isJson(str) {
 	return true;
 }
 
-client.on('message', async (channel, user, message, self) => {
+client.on('message', async (channel, user, msg, self) => {
+	await updateConfig('./config/settings.json',Settings);
+	await updateConfig('./config/commands.json',Commandlist);
 	if(self) return;
-	var uid = user['user-id'];
-		rid = user['custom-reward-id']
-	var message = message.toLowerCase();
-	let linkParser = url.parse(message);
-	let osureward = new Map(Settings.rewards.osu),
+	let uid = user['user-id'],
+		rid = user['custom-reward-id'],
+		message = msg.toLowerCase(),
+		msgArr = message.split(' '),
+		linkParser = url.parse(message),
+		osureward = new Map(Settings.rewards.osu),
 		twitchreward = new Map(Settings.rewards.twitch),
 		rewardOPT = (osureward.has(rid)) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${osureward.get(rid)} |` : "";
+
 	if (osureward.has(rid) && (!linkParser.host) && chekTimeout(user.username)){
 		banchoUser.sendMessage(`${user.username} > ${rewardOPT} ${message}`);
 	}
-	// new
-	if (message.match(/!iq/gi)) {
-		let msgArr = message.split(" "),
-			selfCheck = (message.match(/@/gi) && msgArr[1].replace(/@/gi,"") !== `${user.username}`) ? false : true,
-			checkUser = (selfCheck) ? user.username : msgArr[1];
-		let randIq = randomInteger(1,250);
-		if (checkUser === "rowario") randIq = 99999999999999999;
-		if (checkUser === "robloxxa0_0") randIq = -1;
-		client.say(
-			Settings.channel,
-			entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq у ${checkUser}, у него ${randIq}`)
-		);
-	}
-	switch(message) {
+
+	switch(msgArr[0]) {
 		case "!нп":
 		case "!мап":
 		case "!карта":
@@ -233,6 +223,17 @@ client.on('message', async (channel, user, message, self) => {
 				}
 				else client.say(Settings.channel, entities.decode(`/me > Команда недосутпна :(`));
 			});
+			break;
+		case "!iq":
+			let selfCheck = (message.match(/@/gi) && msgArr[1].replace(/@/gi,"") !== `${user.username}`) ? false : true,
+				checkUser = (selfCheck) ? user.username : msgArr[1];
+			let randIq = randomInteger(1,250);
+			if (checkUser === "rowario") randIq = 99999999999999999;
+			if (checkUser === "robloxxa0_0") randIq = -1;
+			client.say(
+				Settings.channel,
+				entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq у ${checkUser}, у него ${randIq}`)
+			);
 			break;
 		default:
 			// new
@@ -267,6 +268,14 @@ client.on('message', async (channel, user, message, self) => {
 							// Место под проверку профилей
 						default: break;
 					}
+				}
+			}
+			for (command of Commandlist) {
+				if (command.aliases.indexOf(message) + 1) {
+					if (command.settings.modonly && !(user.badges.broadcaster|| user.badges.moderator)) break;
+					let mention = (command.settings.mention) ? `${user.username}` : ``;
+					client.say(Settings.channel, `/me > ${mention} ${command.answer}`);
+					break;
 				}
 			}
 			//TODO: Добавить возможность написания кастомный команд
