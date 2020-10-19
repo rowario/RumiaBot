@@ -1,6 +1,6 @@
 const tmi = require('tmi.js'),
 	Level = require('./get_level.js'),
-	Settings = require('./settings.json'),
+	Settings = require('./config/settings.json'),
 	Banchojs = require("bancho.js"),
 	mongoose = require('mongoose'),
 	url = require('url'),
@@ -30,11 +30,11 @@ const tmi = require('tmi.js'),
 	banchoIrc = new Banchojs.BanchoClient({ username: Settings.osuIrcLogin, password: Settings.osuIrcPass }),
 	banchoUser = banchoIrc.getSelf();
 
-var currentSkip = new Map(),
-	usersMessages = new Map(),
-	usersReqs = new Map(),
-	lastReq = 0,
-	currentSong = "";
+	var currentSkip = new Map(),
+		usersMessages = new Map(),
+		usersReqs = new Map(),
+		lastReq = 0,
+		currentSong = "";
 
 mongoose.connect(Settings.database,{
 	useNewUrlParser: true,
@@ -69,6 +69,20 @@ async function upActive(uid) { var ac = await Active.updateOne({ id: uid },{ met
 async function decActive(uid) { var ac = await Active.updateOne({ id: uid }, { $inc: { meter: -1 } }); }
 async function deleteActive(uid) { var ac = await Active.deleteOne({ id: uid }); }
 // ACTIVE
+
+setInterval(function () {
+	updateConfig('./config/settings.json',Settings);
+},3000);
+
+function updateConfig(file,rewrite) {
+	fs.readFile(file,function (err,data) {
+		if (err) throw err;
+		let jsonData = JSON.parse(data);
+		for (let [key, value] of Object.entries(jsonData)) {
+			rewrite[key] = value;
+		}
+	})
+}
 
 function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000)); }
 
@@ -145,7 +159,7 @@ async function checkAchievements (u) {
 	if (u.stream_messages >= 250) {
 		updateExpirience(u.id,500);
 		clearAchievements(u.id);
-		client.say(Settings.channel, `/me > ${u.username} отправил 250 сообщений за стрим, за это ему начисленно 500 опыта PogChamp`);
+		client.say(Settings.channel, `/me > ${user.username} отправил 250 сообщений за стрим, за это ему начисленно 500 опыта PogChamp`);
 	}
 }
 
@@ -188,7 +202,7 @@ function getMods(message) {
 }
 
 function getBpm(baseBpm,message) {
-	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
+	let arrIndexes = ['dt','nc','ht'],
 		existMods = [],
 		msgParse = message.replace(["https://"],"");
 	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
@@ -247,7 +261,7 @@ client.on('message', async (channel, user, message, self) => {
 		await u.save()
 	}
 
-	if (u.username !== user.username) {
+	if (user.username !== user.username) {
 		updateUsername(uid,user);
 	}
 
@@ -255,9 +269,9 @@ client.on('message', async (channel, user, message, self) => {
 
 	checkAchievements(u);
 
-	if (usersMessages.has(u.username) && usersMessages.get(u.username) >= parseInt(getTimeNow() - 2)) decreaseExpirience(u.id);
+	if (usersMessages.has(user.username) && usersMessages.get(user.username) >= parseInt(getTimeNow() - 2)) decreaseExpirience(u.id);
 
-	usersMessages.set(u.username,getTimeNow());
+	usersMessages.set(user.username,getTimeNow());
 
 	let linkParser = url.parse(message);
 
@@ -302,22 +316,22 @@ client.on('message', async (channel, user, message, self) => {
 		}
 	}
 	if (message === "!rank" || message === "!ранк") {
-		client.say(Settings.channel, `/me > ${u.username} твой ранк #${u.rank}`);
+		client.say(Settings.channel, `/me > ${user.username} твой ранк #${u.rank}`);
 	}
 	if (message === "!count" || message === "!каунт") {
-		client.say(Settings.channel, `/me > ${u.username} отправил ${u.count_messages} сообщений BloodTrail`);
+		client.say(Settings.channel, `/me > ${user.username} отправил ${u.count_messages} сообщений BloodTrail`);
 	}
 	if (message === "!achievement" || message === "!ачивка") {
 		let countToAchiv = parseInt(500 - u.stream_messages);
-		// client.say(Settings.channel, `/me > ${u.username} ты можешь отправить еще ${countToAchiv} сообщений за стрим, и получить 1000 опыта PogChamp`);
-		client.say(Settings.channel, `/me > ${u.username} ты можешь отправить 250 сообщений за стрим, и получить 500 опыта PogChamp`);
+		// client.say(Settings.channel, `/me > ${user.username} ты можешь отправить еще ${countToAchiv} сообщений за стрим, и получить 1000 опыта PogChamp`);
+		client.say(Settings.channel, `/me > ${user.username} ты можешь отправить 250 сообщений за стрим, и получить 500 опыта PogChamp`);
 	}
 	if (message === "!song" || message === "!трек" || message === "!сонг" || message === "!музыка" || message === "!music") {
 		request({url: `https://streamdj.ru/api/get_track/${Settings.djid}`}, (error, response, body) => {
 			if (body !== "null" && isJson(body) && !error) {
 				let data = JSON.parse(stdout);
-				client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас играет "${data.title}" (youtube.com/watch?v=${data.yid})`));
-			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас ничего не играет!`));
+				client.say(Settings.channel, entities.decode(`/me > ${user.username} Сейчас играет "${data.title}" (youtube.com/watch?v=${data.yid})`));
+			}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Сейчас ничего не играет!`));
 		});
 	}
 	if (message === "!skip" || message === "!скип") {
@@ -339,9 +353,9 @@ client.on('message', async (channel, user, message, self) => {
 								client.say(Settings.channel, entities.decode(`/me > "${currentSongData.title}" успешно пропущен PogChamp`));
 							}
 						});
-					}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Твой голос учтен, голосов для пропуска ${currentSkip.size}/${maxSkipCount}`));
-				}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Ты уже проголосовал за пропуск этого трека!`));
-			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас ничего не играет!`));
+					}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Твой голос учтен, голосов для пропуска ${currentSkip.size}/${maxSkipCount}`));
+				}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Ты уже проголосовал за пропуск этого трека!`));
+			}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Сейчас ничего не играет!`));
 		});
 	}
 	if (message === "!banskip" || message === "!банскип") {
@@ -353,12 +367,12 @@ client.on('message', async (channel, user, message, self) => {
 						if (!error && body !== "null" && isJson(body)) {
 							let data = JSON.parse(body);
 							currentSkip.clear();
-							client.say(Settings.channel, entities.decode(`/me > ${u.username} успешно пропустил трек, по причине банворд D:`));
+							client.say(Settings.channel, entities.decode(`/me > ${user.username} успешно пропустил трек, по причине банворд D:`));
 						}
 					});
-				}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Сейчас ничего не играет!`));
+				}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Сейчас ничего не играет!`));
 			});
-		}else client.say(Settings.channel, entities.decode(`/me > ${u.username} ты хто?`));
+		}else client.say(Settings.channel, entities.decode(`/me > ${user.username} ты хто?`));
 	}
 	if (message === "!np" || message === "!нп" || message === "!карта" || message === "!map" || message === "!мап") {
 		request({url: `http://localhost:24050/json`}, (error, response, body) => {
@@ -367,8 +381,8 @@ client.on('message', async (channel, user, message, self) => {
 					bm = data.menu.bm,
 					mapd = bm.metadata,
 					mapLink = (bm.id !== 0) ? `(https://osu.ppy.sh/beatmaps/${bm.id})` : `(карты нет на сайте)`;
-				client.say(Settings.channel,entities.decode(`/me > ${u.username} Сейчас играет ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`));
-			}else client.say(Settings.channel, entities.decode(`/me > ${u.username} Эта команда сейчас недоступна :(`));
+				client.say(Settings.channel,entities.decode(`/me > ${user.username} Сейчас играет ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`));
+			}else client.say(Settings.channel, entities.decode(`/me > ${user.username} Эта команда сейчас недоступна :(`));
 		});
 	}
 	if (message.match(/!iq/gi)) {
