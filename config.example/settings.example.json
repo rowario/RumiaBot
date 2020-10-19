@@ -11,7 +11,12 @@
 	"skins": [
 		["example skins", "link for example skin"]
 	],
-	"rewards":[
-		["rewardkey", "example reward name"]
-	]
+	"rewards": {
+		"osu": [
+			["rewardkey", "example reward name"]
+		],
+		"twitch": [
+			["rewardkey", "example reward name"]
+		]
+	}
 }
