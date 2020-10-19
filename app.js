@@ -175,9 +175,9 @@ function isJson(str) {
 }
 
 client.on('message', async (channel, user, msg, self) => {
+	if(self) return;
 	await updateConfig('./config/settings.json',Settings);
 	await updateConfig('./config/commands.json',Commandlist);
-	if(self) return;
 	let uid = user['user-id'],
 		rid = user['custom-reward-id'],
 		message = msg.toLowerCase(),
