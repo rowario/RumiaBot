@@ -1,6 +1,7 @@
 /node_modules
 settings.json
+commandlist.json
 .gitignore
 test.js
 /beatmaps/*
-/config/*
+/config
