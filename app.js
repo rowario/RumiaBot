@@ -450,6 +450,7 @@ client.on('message', async (channel, user, msg, self) => {
 					break;
 				}
 			}
+
 			// TODO: Добавление удаление комманд
 		break;
 	}
