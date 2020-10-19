@@ -49,6 +49,21 @@ function isJson(str) {
 	return true;
 }
 
+setInterval(function () {
+	updateConfig('./config/settings.json',Settings);
+	updateConfig('./config/commands.json',Commandlist);
+},2000);
+
+function updateConfig(file,rewrite) {
+	fs.readFile(file,function (err,data) {
+		if (err) throw err;
+		let jsonData = JSON.parse(data);
+		for (let [key, value] of Object.entries(jsonData)) {
+			rewrite[key] = value;
+		}
+	})
+}
+
 function osuLinkCheker(linkData) {
 	let pathArr = linkData.path.split("/"),
 		id;
