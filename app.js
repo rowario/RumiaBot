@@ -3,11 +3,10 @@ const tmi = require('tmi.js'),
 	Commandlist = require('./config/commands.json'),
 	url = require('url'),
 	fs = require('fs'),
-	Banchojs = require("bancho.js"),
+	{BanchoClient} = require("bancho.js"),
 	osu = require('node-osu'),
 	request = require('request'),
-	{spawn,exec} = require('child_process'),
-	request = require('request'),
+	{exec} = require('child_process'),
 	Entities = require('html-entities').XmlEntities,
 	entities = new Entities(),
 	client = new tmi.Client({
@@ -27,11 +26,10 @@ const tmi = require('tmi.js'),
 		completeScores: true,
 		parseNumeric: false
 	}),
-	banchoIrc = new Banchojs.BanchoClient({ username: Settings.osuIrcLogin, password: Settings.osuIrcPass }),
+	banchoIrc = new BanchoClient({ username: Settings.osuIrcLogin, password: Settings.osuIrcPass }),
 	banchoUser = banchoIrc.getSelf();
 
-var usersMessages = new Map(),
-	usersReqs = new Map(),
+var usersReqs = new Map(),
 	lastReq = 0;
 
 banchoIrc.connect().then(() => {
@@ -40,15 +38,6 @@ banchoIrc.connect().then(() => {
 client.connect();
 
 function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000)); }
-
-function isJson(str) {
-	try {
-		JSON.parse(str);
-	} catch (e) {
-		return false;
-	}
-	return true;
-}
 
 function updateConfig(file,rewrite) {
 	return new Promise( resolve => {
@@ -64,10 +53,9 @@ function updateConfig(file,rewrite) {
 }
 
 function osuLinkCheker(linkData) {
-	let pathArr = linkData.path.split("/"),
-		id;
+	let pathArr = linkData.path.split("/");
 	if (["b","beatmaps","beatmapsets"].indexOf(pathArr[1]) + 1) {
-		if (pathArr[1] == 'beatmapsets' && linkData.hash !== null) {
+		if (pathArr[1] === 'beatmapsets' && linkData.hash !== null) {
 			return {
 				type: "b",
 				id: parseInt(linkData.hash.split("/")[1])
@@ -96,8 +84,8 @@ function osuLinkCheker(linkData) {
 
 function chekTimeout(username) {
 	if (usersReqs.has(username) && usersReqs.get(username) > parseInt(getTimeNow() - 20)) return false;
-	if (lastReq > parseInt(getTimeNow() - 5)) return false;
-	return true;
+	return lastReq <= parseInt(getTimeNow() - 5);
+
 }
 
 function randomInteger(min, max) {
@@ -120,9 +108,8 @@ function getBpm(baseBpm,message) {
 		existMods = [],
 		msgParse = message.replace(["https://"],"");
 	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
-	let dtCheck = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(baseBpm * 1.5) : parseInt(baseBpm),
-		htCheck = (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
-	return htCheck;
+	let dtCheck = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(baseBpm * 1.5) : parseInt(baseBpm);
+	return (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
 }
 
 // Для работы нужно создать папку beatmaps
@@ -133,7 +120,7 @@ function getOsuFile(beatmap_id) {
 		if (!fs.existsSync(file_name)) {
 			request({url: `https://osu.ppy.sh/osu/${beatmap_id}`}, (error, response, body) => {
 				if (!error && body !== "null") {
-					fs.writeFile(file_name, body, (err,data) => {
+					fs.writeFile(file_name, body, (err) => {
 						if (err) res(false);
 						res(file_name);
 					})
@@ -146,7 +133,7 @@ function getOsuFile(beatmap_id) {
 async function getOppaiData(beatmap_id,mods,acc) {
 	return new Promise(async res => {
 		let file_name = await getOsuFile(beatmap_id);
-		exec(`"./oppai.exe" "${file_name}" ${mods} ${acc}%`, function (err,stdout,stderr) {
+		exec(`"./oppai.exe" "${file_name}" ${mods} ${acc}%`, function (err,stdout) {
 			if (!err && stdout !== "null") {
 				let mapData = stdout.split("\n"),
 					stats = mapData[12].split(" ");
@@ -226,7 +213,7 @@ client.on('message', async (channel, user, msg, self) => {
 			});
 			break;
 		case "!iq":
-			let selfCheck = (message.match(/@/gi) && msgArr[1].replace(/@/gi,"") !== `${user.username}`) ? false : true,
+			let selfCheck = (!(message.match(/@/gi) && msgArr[1].replace(/@/gi, "") !== `${user.username}`)),
 				checkUser = (selfCheck) ? user.username : msgArr[1].raplce(/@/gi,"");
 			let randIq = randomInteger(1,250);
 			if (checkUser === "rowario") randIq = 99999999999999999;
@@ -238,13 +225,13 @@ client.on('message', async (channel, user, msg, self) => {
 			break;
 		default:
 			// new
-			if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
+			if (linkParser.host === 'osu.ppy.sh' || linkParser.host === 'old.ppy.sh' || linkParser.host === 'osu.gatari.pw') {
 				let linkInfo = osuLinkCheker(linkParser);
 				if (linkInfo && chekTimeout(user.username)) {
 					switch (linkInfo.type) {
 						case "s":
 						case "b":
-							let getMapConfig = (linkInfo.type == "b") ? { b: linkInfo.id } : { s: linkInfo.id };
+							let getMapConfig = (linkInfo.type === "b") ? { b: linkInfo.id } : { s: linkInfo.id };
 							osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
 								if (beatmaps[0]) {
 									lastReq = getTimeNow();
@@ -265,13 +252,13 @@ client.on('message', async (channel, user, msg, self) => {
 								}
 							});
 							break;
-						case "s":
+						case "p":
 							// Место под проверку профилей
 						default: break;
 					}
 				}
 			}
-			for (command of Commandlist) {
+			for (let command of Commandlist) {
 				if (command.aliases.indexOf(message) + 1) {
 					if (command.settings.modonly && !(user.badges.broadcaster|| user.badges.moderator)) break;
 					let mention = (command.settings.mention) ? `${user.username}` : ``;
