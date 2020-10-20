@@ -40,15 +40,6 @@ client.connect();
 
 function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000)); }
 
-function isJson(str) {
-	try {
-		JSON.parse(str);
-	} catch (e) {
-		return false;
-	}
-	return true;
-}
-
 function updateConfig(file,rewrite) {
 	return new Promise( resolve => {
 		fs.readFile(file,function (err,data) {
@@ -103,7 +94,6 @@ function randomInteger(min, max) {
 	let rand = min - 0.5 + Math.random() * (max - min + 1);
 	return Math.round(rand);
 }
-
 // new
 function getMods(message) {
 	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
@@ -112,7 +102,6 @@ function getMods(message) {
 	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
 	return (existMods.length > 0) ? ` +${existMods.join('')}` : ``;
 }
-
 // new
 function getBpm(baseBpm,message) {
 	let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
@@ -123,7 +112,6 @@ function getBpm(baseBpm,message) {
 		htCheck = (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
 	return htCheck;
 }
-
 // Для работы нужно создать папку beatmaps
 // и добавь все содержимое в ней в gitignore "/beatmaps/*"
 function getOsuFile(beatmap_id) {
@@ -225,7 +213,7 @@ client.on('message', async (channel, user, msg, self) => {
 			});
 			break;
 		case "!iq":
-			let selfCheck = (message.match(/@/gi) && msgArr[1].replace(/@/gi,"") !== `${user.username}`) ? false : true,
+			let selfCheck = (!(message.match(/@/gi) && msgArr[1].replace(/@/gi, "") !== `${user.username}`)),
 				checkUser = (selfCheck) ? user.username : msgArr[1];
 			let randIq = randomInteger(1,250);
 			if (checkUser === "rowario") randIq = 99999999999999999;
@@ -237,13 +225,13 @@ client.on('message', async (channel, user, msg, self) => {
 			break;
 		default:
 			// new
-			if (linkParser.host == 'osu.ppy.sh' || linkParser.host == 'old.ppy.sh' || linkParser.host == 'osu.gatari.pw') {
+			if (linkParser.host === 'osu.ppy.sh' || linkParser.host === 'old.ppy.sh' || linkParser.host === 'osu.gatari.pw') {
 				let linkInfo = osuLinkCheker(linkParser);
 				if (linkInfo && chekTimeout(user.username)) {
 					switch (linkInfo.type) {
 						case "s":
 						case "b":
-							let getMapConfig = (linkInfo.type == "b") ? { b: linkInfo.id } : { s: linkInfo.id };
+							let getMapConfig = (linkInfo.type === "b") ? { b: linkInfo.id } : { s: linkInfo.id };
 							osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
 								if (beatmaps[0]) {
 									lastReq = getTimeNow();
