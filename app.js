@@ -227,7 +227,7 @@ client.on('message', async (channel, user, msg, self) => {
 			break;
 		case "!iq":
 			let selfCheck = (message.match(/@/gi) && msgArr[1].replace(/@/gi,"") !== `${user.username}`) ? false : true,
-				checkUser = (selfCheck) ? user.username : msgArr[1];
+				checkUser = (selfCheck) ? user.username : msgArr[1].raplce(/@/gi,"");
 			let randIq = randomInteger(1,250);
 			if (checkUser === "rowario") randIq = 99999999999999999;
 			if (checkUser === "robloxxa0_0") randIq = -1;
