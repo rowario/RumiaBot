@@ -243,6 +243,7 @@ client.on('message', async (channel, user, msg, self) => {
 				if (linkInfo && chekTimeout(user.username)) {
 					switch (linkInfo.type) {
 						case "s":
+						case "r":
 						case "b":
 							let getMapConfig = (linkInfo.type == "b") ? { b: linkInfo.id } : { s: linkInfo.id };
 							osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
