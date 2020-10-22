@@ -31,11 +31,10 @@ class Database {
         })
     }
 
-    getCommand(alias) {
-        this.db.get(`SELECT * FROM commands WHERE id IN (SELECT command_id FROM aliases WHERE alias = '${alias}')`,(err,row) => {
-            if (err) throw err;
-            return row;
-        });
+    async getCommand(alias) {
+        let row = await this.db.get(`SELECT * FROM commands WHERE id IN (SELECT command_id FROM aliases WHERE alias = '${alias}')`);
+        if (row) return row;
+        return false;
     }
 
     async truncateTables() {
