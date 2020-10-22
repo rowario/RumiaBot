@@ -7,6 +7,8 @@ const tmi = require('tmi.js'),
 	OsuRequest = require('./osu-request.js'),
 	Entities = require('html-entities').XmlEntities,
 	entities = new Entities(),
+	Database = require("./database.js"),
+	db = new Database("database.sqlite"),
 	client = new tmi.Client({
 		options: { debug: true },
 		connection: {
