@@ -54,10 +54,9 @@ function updateConfig(file,rewrite) {
 }
 
 function osuLinkCheker(linkData) {
-	let pathArr = linkData.path.split("/"),
-		id;
+	let pathArr = linkData.path.split("/");
 	if (["b","beatmaps","beatmapsets"].indexOf(pathArr[1]) + 1) {
-		if (pathArr[1] == 'beatmapsets' && linkData.hash !== null) {
+		if (pathArr[1] === 'beatmapsets' && linkData.hash !== null) {
 			return {
 				type: "b",
 				id: parseInt(linkData.hash.split("/")[1])
@@ -86,8 +85,8 @@ function osuLinkCheker(linkData) {
 
 function chekTimeout(username) {
 	if (usersReqs.has(username) && usersReqs.get(username) > parseInt(getTimeNow() - 20)) return false;
-	if (lastReq > parseInt(getTimeNow() - 5)) return false;
-	return true;
+	return lastReq <= parseInt(getTimeNow() - 5);
+
 }
 
 function randomInteger(min, max) {
@@ -108,9 +107,8 @@ function getBpm(baseBpm,message) {
 		existMods = [],
 		msgParse = message.replace(["https://"],"");
 	for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
-	let dtCheck = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(baseBpm * 1.5) : parseInt(baseBpm),
-		htCheck = (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
-	return htCheck;
+	let dtCheck = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(baseBpm * 1.5) : parseInt(baseBpm);
+	return (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
 }
 // Для работы нужно создать папку beatmaps
 // и добавь все содержимое в ней в gitignore "/beatmaps/*"
@@ -128,6 +126,16 @@ function getOsuFile(beatmap_id) {
 			});
 		}else res(file_name);
 	});
+}
+
+function getLink(message){
+	let arrMsg = message;
+	for(let http in arrMsg){
+		if(url.parse(arrMsg[http]).protocol !== null){
+			return arrMsg.splice(http, message.length).join(" ");
+		}
+	}
+	return message.join();
 }
 
 async function getOppaiData(beatmap_id,mods,acc) {
@@ -170,15 +178,14 @@ client.on('message', async (channel, user, msg, self) => {
 		rid = user['custom-reward-id'],
 		message = msg.toLowerCase(),
 		msgArr = message.split(' '),
-		linkParser = url.parse(message),
+		osuLink = getLink(msgArr),
+		linkParser = url.parse(osuLink),
 		osureward = new Map(Settings.rewards.osu),
 		twitchreward = new Map(Settings.rewards.twitch),
 		rewardOPT = (osureward.has(rid)) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${osureward.get(rid)} |` : "";
-
 	if (osureward.has(rid) && (!linkParser.host) && chekTimeout(user.username)){
 		banchoUser.sendMessage(`${user.username} > ${rewardOPT} ${message}`);
 	}
-
 	switch(msgArr[0]) {
 		case "!нп":
 		case "!мап":
@@ -240,15 +247,16 @@ client.on('message', async (channel, user, msg, self) => {
 										oppaiData = [],
 										ppAccString = [];
 									for await (let acc of [95,98,99,100]) {
-										let getOppai = await getOppaiData(mapInfo.id,getMods(message),acc);
+										let getOppai = await getOppaiData(mapInfo.id,getMods(osuLink),acc);
 										oppaiData.push(getOppai);
 										ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
 									}
-									let bpm = getBpm(mapInfo.bpm,message),
+									let bpm = getBpm(mapInfo.bpm,osuLink),
+										mods = getMods(osuLink).toUpperCase(),
 										starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
-										mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] [https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC] ${getMods(message).toUpperCase()} (${bpm} BPM, ${starRate} ⭐${ppAccString.join(', ')})`;
+										mapIrc = `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}] [https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC] ${mods} (${bpm} BPM, ${starRate}⭐, ${ppAccString.join(', ')})`;
 									banchoUser.sendMessage(`${user.username} > ${mapIrc}`);
-									client.say(Settings.channel,`/me > ${rewardOPT} ${user.username} ${mapInfo.artist} - ${mapInfo.title} реквест добавлен!`);
+									client.say(Settings.channel,`/me > ${rewardOPT} ${user.username} ${mapInfo.artist} - ${mapInfo.title} ${mods} реквест добавлен!`);
 								}
 							});
 							break;
@@ -266,7 +274,6 @@ client.on('message', async (channel, user, msg, self) => {
 					break;
 				}
 			}
-			//TODO: Добавить возможность написания кастомный команд
 			//TODO: Возможно добавить создание/удаление/редактирование команд
 			break;
 	}
