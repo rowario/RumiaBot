@@ -149,6 +149,30 @@ client.on('message', async (channel, user, msg, self) => {
 				entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq у ${checkUser}, у него ${randIq}`)
 			);
 			break;
+		case "!com":
+			//TODO: Редактирование комманд из базы данных
+			if(user.badges.broadcaster || user.badges.moderator){
+				switch(msgArr[1]){
+					case "add":
+						let aliases = msgArr[2],
+						answer = msgArr.splice(3, msgArr.length).join(" ");
+						if(await db.createCommand(aliases, answer)){
+							client.say(Settings.channel, entities.decode(`/me > ${user.username}, команда ${aliases.split("/")[0]} успешно добавлена`))
+						} else{
+							client.say(Settings.channel, entities.decode(`/me > ${user.username}, такая команда уже существует!`))
+						}
+						break;
+					case "edit":
+						break;
+					case "delete":
+						if(await db.deleteCommand(msgArr[2])){
+							client.say(Settings.channel, `/me > ${user.username}, команда ${msgArr[2]} успешно удалена!`);
+						} else{
+							client.say(Settings.channel, `/me > ${user.username}, такой команды не существует`);
+						}
+						break;
+				}
+			}
 		default:
 			// new
 			if (linkParser.host === 'osu.ppy.sh' || linkParser.host === 'old.ppy.sh' || linkParser.host === 'osu.gatari.pw') {
@@ -170,16 +194,11 @@ client.on('message', async (channel, user, msg, self) => {
 					}
 				}
 			}
-			//TODO: Добавление|Удаление|Редактирование комманд из базы данных
 
-			// for (let command of Commandlist) {
-			// 	if (command.aliases.indexOf(message) + 1) {
-			// 		if (command.settings.modonly && !(user.badges.broadcaster|| user.badges.moderator)) break;
-			// 		let mention = (command.settings.mention) ? `${user.username}` : ``;
-			// 		client.say(Settings.channel, `/me > ${mention} ${command.answer}`);
-			// 		break;
-			// 	}
-			// }
+			if(await db.getCommand(msgArr[0])){
+				let answer = await db.getCommand(msgArr[0]);
+				client.say(Settings.channel, `/me > ${answer.answer}`);
+			}
 			break;
 	}
 });
