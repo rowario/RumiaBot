@@ -103,8 +103,6 @@ client.on('message', async (channel, user, msg, self) => {
 		// twitchreward = new Map(Settings.rewards.twitch),
 		rewardOPT = (osureward.has(rid)) ? `ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${osureward.get(rid)} |` : "";
 
-	if (osureward.has(rid)) OsuRequest.setFormat(`ОБЯЗАТЕЛЬНЫЙ РЕКВЕСТ: ${osureward.get(rid)} | {username} > {dllink} {bclink} {mods} {mapstat}`);
-
 	if (osureward.has(rid) && (!linkParser.host) && chekTimeout(user.username)) await OsuRequest.sendMessage(`${user.username} > ${rewardOPT} ${message}`);
 
 	switch(msgArr[0]) {
@@ -159,7 +157,7 @@ client.on('message', async (channel, user, msg, self) => {
 					switch (linkInfo.type) {
 						case "s":
 						case "b":
-							let osuReq = await OsuRequest.sendRequest(linkInfo,user.username,osuLink);
+							let osuReq = await OsuRequest.sendRequest(linkInfo,user.username,osuLink,rewardOPT);
 							if (osuReq) {
 								lastReq = getTimeNow();
 								usersReqs.set(user.username,getTimeNow());

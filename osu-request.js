@@ -73,7 +73,7 @@ async function getOppaiData(beatmap_id,mods,acc) {
 }
 
 class OsuRequest {
-    defaultFormat = `{username} > {dllink} {bclink} {mods} {mapstat}`;
+    defaultFormat = `{custom} {username} > {dllink} {bclink} {mods} {mapstat}`;
     constructor() {
         this.format = this.defaultFormat.toString();
     }
@@ -103,37 +103,38 @@ class OsuRequest {
      * @param linkInfo{Object}
      * @param username{String}
      * @param osuLink{Array}
+     * @param customText{String}
      * @returns {Promise<Object>}
      */
-    async sendRequest(linkInfo,username,osuLink) {
+    async sendRequest(linkInfo, username, osuLink,customText = "") {
         return new Promise(res => {
             let getMapConfig = (linkInfo.type === "b") ? { b: linkInfo.id } : { s: linkInfo.id };
             osuApi.getBeatmaps(getMapConfig).then( async beatmaps => {
-                if (beatmaps[0]) {
-                    let mapInfo = beatmaps[0],
-                        oppaiData = [],
-                        ppAccString = [],
-                        mods = getMods(osuLink).toUpperCase();
-                    for await (let acc of [95,98,99,100]) {
-                        let getOppai = await getOppaiData(mapInfo.id,mods,acc);
-                        oppaiData.push(getOppai);
-                        ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
-                    }
-                    let starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
-                        genMsg = this.format
-                        .replace(/{username}/,username)
-                        .replace(/{dllink}/,`[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}]`)
-                        .replace(/{bclink}/,`[https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC]`)
-                        .replace(/{mods}/,mods)
-                        .replace(/{mapstat}/,`(${getBpm(mapInfo.bpm,osuLink)} BPM, ${starRate}⭐, ${ppAccString.join(', ')})`);
-                    await banchoUser.sendMessage(genMsg.trim());
-                    this.resetFormat();
-                    res({
-                        "title": mapInfo.title,
-                        "artist": mapInfo.artist,
-                        "mods": mods
-                    });
+                if (!beatmaps[0]) return;
+                let mapInfo = beatmaps[0],
+                    oppaiData = [],
+                    ppAccString = [],
+                    mods = getMods(osuLink).toUpperCase();
+                for await (let acc of [95,98,99,100]) {
+                    let getOppai = await getOppaiData(mapInfo.id,mods,acc);
+                    oppaiData.push(getOppai);
+                    ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
                 }
+                let starRate = (oppaiData[0]) ? parseFloat(oppaiData[0].stats.sr).toFixed(2) : parseFloat(mapInfo.difficultyrating).toFixed(2),
+                    genMsg = this.format
+                    .replace(/{custom}/,customText)
+                    .replace(/{username}/,username)
+                    .replace(/{dllink}/,`[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}]`)
+                    .replace(/{bclink}/,`[https://bloodcat.com/osu/s/${mapInfo.beatmapSetId} BC]`)
+                    .replace(/{mods}/,mods)
+                    .replace(/{mapstat}/,`(${getBpm(mapInfo.bpm,osuLink)} BPM, ${starRate}⭐, ${ppAccString.join(', ')})`);
+                this.resetFormat();
+                await banchoUser.sendMessage(genMsg.trim());
+                res({
+                    "title": mapInfo.title,
+                    "artist": mapInfo.artist,
+                    "mods": mods
+                });
             });
         })
     }
