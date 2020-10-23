@@ -37,6 +37,18 @@ class Database {
         return false;
     }
 
+    async deleteCommand(alias){
+        if (await this.checkAliases(alias)) return false;
+        let command_id = await this.db.get(`SELECT command_id FROM aliases WHERE alias = '${alias}'`);
+        if (!command_id) {
+            return false;
+        } else {
+            await this.db.run(`DELETE FROM aliases WHERE command_id = ${command_id.command_id}`);
+            await this.db.run(`DELETE FROM commands WHERE id = ${command_id.command_id}`);
+            return true;
+        }
+    }
+
     async truncateTables() {
         await this.db.run(`DROP TABLE commands`);
         await this.db.run(`DROP TABLE aliases`);
