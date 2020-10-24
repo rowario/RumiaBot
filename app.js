@@ -151,11 +151,16 @@ client.on('message', async (channel, user, msg, self) => {
 			break;
 		case "!pp":
 		case "!iffc":
-			request({url: `http://localhost:24050/json`}, (error, response, body) =>{
+			request({url: `http://localhost:24050/json`},  async (error, response, body) =>{
 				if (body !== "null" && !error && isJson(body)){
 					let data = JSON.parse(body),
+						beatmap_id = data.menu.bm.id,
 						maxpp = data.menu.pp[100];
-					client.say(Settings.channel, entities.decode(`/me > SS: ${maxpp}pp`));
+					if (msgArr[1]){
+						let oppaidata = await OsuRequest.getOppaiData(beatmap_id, msgArr[2], msgArr[1].replace("%", ""));
+						maxpp = oppaidata.pp.toFixed(0);
+					}
+					client.say(Settings.channel, entities.decode(`/me > ${user.username}, ${maxpp}pp`));
 				} else {client.say(Settings.channel, entities.decode(`/me > Команда недоступна`))}
 			})
 			break;
