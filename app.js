@@ -149,6 +149,16 @@ client.on('message', async (channel, user, msg, self) => {
 				entities.decode((selfCheck) ? `/me > ${user.username} твой IQ ${randIq}` : `/me > ${user.username} ты проверил iq у ${checkUser}, у него ${randIq}`)
 			);
 			break;
+		case "!pp":
+		case "!iffc":
+			request({url: `http://localhost:24050/json`}, (error, response, body) =>{
+				if (body !== "null" && !error && isJson(body)){
+					let data = JSON.parse(body),
+						maxpp = data.menu.pp[100];
+					client.say(Settings.channel, entities.decode(`/me > SS: ${maxpp}pp`));
+				} else {client.say(Settings.channel, entities.decode(`/me > Команда недоступна`))}
+			})
+			break;
 		case "!com":
 			//TODO: Редактирование комманд из базы данных
 			if(user.badges.broadcaster || user.badges.moderator){
