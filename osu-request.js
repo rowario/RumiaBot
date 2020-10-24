@@ -19,16 +19,13 @@ banchoIrc.connect().then(() => {
 function getMods(message) {
     let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
         existMods = [],
-        msgParse = message.replace(["https://"],"");
+        msgParse = (message !== undefined) ? message.replace(["https://"],"") : toString(message);
     for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
     return (existMods.length > 0) ? ` +${existMods.join('')}` : ``;
 }
 
 function getBpm(baseBpm,message) {
-    let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
-        existMods = [],
-        msgParse = message.replace(["https://"],"");
-    for (let item of arrIndexes) if (msgParse.indexOf(item) + 1) if (!existMods.indexOf(item) + 1) existMods.push(item);
+    let existMods = getMods(message);
     let dtCheck = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(baseBpm * 1.5) : parseInt(baseBpm);
     return (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
 }
@@ -96,6 +93,9 @@ class OsuRequest {
      */
     async sendMessage(message) {
         await banchoUser.sendMessage(message.trim());
+    }
+    async getOppaiData(beatmap_id, mods, acc) {
+        return getOppaiData(beatmap_id, getMods(mods), acc);
     }
 
     /**
