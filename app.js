@@ -72,13 +72,8 @@ function randomInteger(min, max) {
 }
 
 function getLink(message){
-	let arrMsg = message;
-	for(let http in arrMsg){
-		if(url.parse(arrMsg[http]).protocol !== null){
-			return arrMsg.splice(http, message.length).join(" ");
-		}
-	}
-	return message.join();
+	let strMsg = message.toString();
+	return (strMsg.indexOf("http") !== -1) ? strMsg.slice(strMsg.indexOf("http"), strMsg.length) : "";
 }
 
 function isJson(str) {
@@ -212,7 +207,7 @@ client.on('message', async (channel, user, msg, self) => {
 
 			if(await db.getCommand(msgArr[0])){
 				let answer = await db.getCommand(msgArr[0]);
-				client.say(Settings.channel, `/me > ${answer.answer}`);
+				client.say(Settings.channel, entities.decode(`/me > ${answer.answer}`));
 			}
 			break;
 	}
