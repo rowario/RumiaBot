@@ -160,7 +160,7 @@ client.on('message', async (channel, user, msg, self) => {
 						let oppaidata = await OsuRequest.getOppaiData(beatmap_id, msgArr[2], msgArr[1].replace("%", ""));
 						maxpp = oppaidata.pp.toFixed(0);
 					}
-					client.say(Settings.channel, entities.decode(`/me > ${user.username}, ${maxpp}pp`));
+					client.say(Settings.channel, entities.decode(`/me > ${user.username} ${maxpp}pp`));
 				} else {client.say(Settings.channel, entities.decode(`/me > Команда недоступна`))}
 			})
 			break;
