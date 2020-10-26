@@ -146,18 +146,10 @@ client.on('message', async (channel, user, msg, self) => {
 			break;
 		case "!pp":
 		case "!iffc":
-			request({url: `http://localhost:24050/json`},  async (error, response, body) =>{
-				if (body !== "null" && !error && isJson(body)){
-					let data = JSON.parse(body),
-						beatmap_id = data.menu.bm.id,
-						maxpp = data.menu.pp[100];
-					if (msgArr[1]){
-						let oppaidata = await OsuRequest.getOppaiData(beatmap_id, msgArr[2], msgArr[1].replace("%", ""));
-						maxpp = oppaidata.pp.toFixed(0);
-					}
-					client.say(Settings.channel, entities.decode(`/me > ${user.username} ${maxpp}pp`));
-				} else {client.say(Settings.channel, entities.decode(`/me > Команда недоступна`))}
-			})
+			let acc = (msgArr[1] && parseInt(msgArr[1]) > 0) ? msgArr[1].replace("%", "") : 100,
+				mods = (msgArr[2]) ? msgArr[2] : ``,
+				oppaidata = await OsuRequest.getOppaiData(0, mods, acc,true);
+			client.say(Settings.channel, entities.decode(`/me > ${user.username} ${oppaidata.pp.toFixed(0)}pp`));
 			break;
 		case "!com":
 			//TODO: Редактирование комманд из базы данных

@@ -16,6 +16,15 @@ banchoIrc.connect().then(() => {
     console.log(`Connected to bancho!`);
 })
 
+function isJson(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
 function getMods(message) {
     let arrIndexes = ['hd','dt','nc','hr','ez','nf','ht','v2'],
         existMods = [],
@@ -28,6 +37,19 @@ function getBpm(baseBpm,message) {
     let existMods = getMods(message);
     let dtCheck = (existMods.indexOf('dt') + 1) || (existMods.indexOf('nc') + 1) ? parseInt(baseBpm * 1.5) : parseInt(baseBpm);
     return (existMods.indexOf('ht') + 1) ? parseInt(dtCheck * 0.75) : parseInt(dtCheck);
+}
+
+function getOsuFileLocal() {
+    return new Promise( res => {
+        request("http://localhost:24050/json", (error, response, body) => {
+            if (body !== "null" && !error && isJson(body)) {
+                let data = JSON.parse(body),
+                    fileName = `${data.menu.bm.path.folder}\\${data.menu.bm.path.file}`;
+                if (fileName) res(`${Settings.osuFolder}${fileName}`);
+                res(false);
+            }else res(false);
+        })
+    });
 }
 
 function getOsuFile(beatmap_id) {
@@ -46,10 +68,10 @@ function getOsuFile(beatmap_id) {
     });
 }
 
-async function getOppaiData(beatmap_id,mods = "",acc) {
+async function getOppaiData(beatmap_id,mods = "",acc,local = false) {
     return new Promise(async res => {
-        let file_name = await getOsuFile(beatmap_id);
-        exec(`"./oppai.exe" "${file_name}" ${mods} ${acc}%`, function (err,stdout) {
+        let file_name = (local) ? await getOsuFileLocal() : await getOsuFile(beatmap_id);
+        exec(`"./oppai.exe" "${file_name}" ${getMods(mods.toLowerCase())} ${acc}%`, function (err,stdout) {
             if (!err && stdout !== "null") {
                 let mapData = stdout.split("\n"),
                     stats = mapData[12].split(" ");
