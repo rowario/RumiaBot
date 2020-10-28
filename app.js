@@ -7,7 +7,7 @@ const tmi = require('tmi.js'),
 	Entities = require('html-entities').XmlEntities,
 	entities = new Entities(),
 	Commands = require("./commands.js"),
-	Levels = require("./levels.js"),
+	// Levels = require("./levels.js"),
 	client = new tmi.Client({
 		options: { debug: true },
 		connection: {
