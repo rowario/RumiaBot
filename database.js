@@ -49,6 +49,25 @@ class Database {
         }
     }
 
+    async editCommand(alias,newAnswer) {
+        let command = await this.getCommand(alias);
+        if (!command) return false;
+        await this.db.run(`UPDATE commands SET answer = '${newAnswer}' WHERE id = ${command.id}`);
+        return await this.getCommand(alias);
+    }
+
+    async addAlias(alias,newAlias) {
+        let command = await this.getCommand(alias);
+        if (!command) return false;
+        await this.db.run(`INSERT INTO aliases (alias,command_id) VALUES ('${newAlias}','${command.id}')`);
+        return true;
+    }
+
+    async deleteAlias(alias) {
+        await this.db.run(`DELETE FROM aliases WHERE alias = ${alias}`);
+        return true;
+    }
+
     async truncateTables() {
         await this.db.run(`DROP TABLE commands`);
         await this.db.run(`DROP TABLE aliases`);
