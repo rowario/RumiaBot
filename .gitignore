@@ -1,8 +1,6 @@
 /node_modules
-settings.json
-commandlist.json
 test.js
 /beatmaps/*
 /config
 /.idea
-/database/*
+/database
