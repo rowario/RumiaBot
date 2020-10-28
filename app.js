@@ -1,14 +1,13 @@
 const tmi = require('tmi.js'),
 	Settings = require('./config/settings.json'),
-	Commandlist = require('./config/commands.json'),
 	url = require('url'),
 	fs = require('fs'),
 	request = require('request'),
 	OsuRequest = require('./osu-request.js'),
 	Entities = require('html-entities').XmlEntities,
 	entities = new Entities(),
-	Database = require("./database.js"),
-	db = new Database("database.sqlite"),
+	Commands = require("./commands.js"),
+	Levels = require("./levels.js"),
 	client = new tmi.Client({
 		options: { debug: true },
 		connection: {
@@ -88,7 +87,6 @@ function isJson(str) {
 client.on('message', async (channel, user, msg, self) => {
 	if(self) return;
 	await updateConfig('./config/settings.json',Settings);
-	await updateConfig('./config/commands.json',Commandlist);
 	let rid = user['custom-reward-id'],
 		message = msg.toLowerCase(),
 		msgArr = message.split(' '),
@@ -158,7 +156,7 @@ client.on('message', async (channel, user, msg, self) => {
 					case "add":
 						let aliases = msgArr[2],
 						answer = msgArr.splice(3, msgArr.length).join(" ");
-						if(await db.createCommand(aliases, answer)){
+						if(await Commands.createCommand(aliases, answer)){
 							client.say(Settings.channel, entities.decode(`/me > ${user.username}, команда ${aliases.split("/")[0]} успешно добавлена`))
 						} else{
 							client.say(Settings.channel, entities.decode(`/me > ${user.username}, такая команда уже существует!`))
@@ -167,7 +165,7 @@ client.on('message', async (channel, user, msg, self) => {
 					case "edit":
 						break;
 					case "delete":
-						if(await db.deleteCommand(msgArr[2])){
+						if(await Commands.deleteCommand(msgArr[2])){
 							client.say(Settings.channel, `/me > ${user.username}, команда ${msgArr[2]} успешно удалена!`);
 						} else{
 							client.say(Settings.channel, `/me > ${user.username}, такой команды не существует`);
@@ -197,8 +195,8 @@ client.on('message', async (channel, user, msg, self) => {
 				}
 			}
 
-			if(await db.getCommand(msgArr[0])){
-				let answer = await db.getCommand(msgArr[0]);
+			if(await Commands.getCommand(msgArr[0])){
+				let answer = await Commands.getCommand(msgArr[0]);
 				client.say(Settings.channel, entities.decode(`/me > ${answer.answer}`));
 			}
 			break;

@@ -6,8 +6,10 @@ class Database {
         open({
             filename: database,
             driver: sqlite3.Database
-        }).then(db => {
+        }).then(async db => {
             this.db = db;
+            await this.db.run(`CREATE TABLE IF NOT EXISTS "commands" ("id" INTEGER, "answer" TEXT, PRIMARY KEY ("id" AUTOINCREMENT))`);
+            await this.db.run(`CREATE TABLE IF NOT EXISTS "aliases" ("id" INTEGER, "command_id" INTEGER, "alias" TEXT, PRIMARY KEY ("id" AUTOINCREMENT))`);
         });
     }
 
@@ -21,13 +23,13 @@ class Database {
 
     async checkAliases(aliasesArr) {
         return new Promise(async res => {
-           let count = 0;
-           for (let alias of aliasesArr) {
-               let res = await this.db.get(`SELECT * FROM aliases WHERE alias = '${alias}'`);
-               if (res) count++;
-           }
-           if (count > 0) res(true);
-           res(false);
+            let count = 0;
+            for (let alias of aliasesArr) {
+                let res = await this.db.get(`SELECT * FROM aliases WHERE alias = '${alias}'`);
+                if (res) count++;
+            }
+            if (count > 0) res(true);
+            res(false);
         })
     }
 
@@ -74,4 +76,4 @@ class Database {
     }
 }
 
-module.exports = Database;
+module.exports = new Database("./database/commands.sqlite");
