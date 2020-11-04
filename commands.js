@@ -50,7 +50,7 @@ class Database {
             return true;
         }
     }
-
+    
     async editCommand(alias,newAnswer) {
         let command = await this.getCommand(alias);
         if (!command) return false;

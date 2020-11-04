@@ -44,7 +44,7 @@ class Levels {
     }
 
     getExperience(lvl) {
-        return parseInt((((lvl-1) * 1.3) * 50) + (Math.pow((lvl*1.2),2) * 120));
+        return parseInt((((lvl - 1) * 1.3) * 50) + (Math.pow((lvl * 1.2),2) * 120));
     }
 
     getLevel(exp,lvl = 1) {

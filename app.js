@@ -3,11 +3,20 @@ const tmi = require('tmi.js'),
 	url = require('url'),
 	fs = require('fs'),
 	request = require('request'),
+	osu = require('node-osu'),
+	osuApi = new osu.Api(Settings.osuToken, {
+		notFoundAsError: true,
+		completeScores: true,
+		parseNumeric: false
+	}),
 	OsuRequest = require('./osu-request.js'),
 	Entities = require('html-entities').XmlEntities,
 	entities = new Entities(),
 	Commands = require("./commands.js"),
 	// Levels = require("./levels.js"),
+	express = require('express'),
+	cors = require('cors'),
+	app = express(),
 	client = new tmi.Client({
 		options: { debug: true },
 		connection: {
@@ -25,6 +34,22 @@ var usersReqs = new Map(),
 	lastReq = 0;
 
 client.connect();
+
+app.use(cors())
+
+app.post('/get_user/:username', function (req, res) {
+	osuApi.getUser({u: req.params.username, m: 0}).then(userData => {
+		osuApi.getUserBest({u: userData.id, m: 0, limit: 10}).then( userBest => {
+			let data = {
+				userData: userData,
+				userBest: userBest
+			};
+			res.json(data);
+		})
+	})
+})
+
+app.listen(24051);
 
 function getTimeNow() { return parseInt(Math.round(new Date().getTime() / 1000)); }
 
