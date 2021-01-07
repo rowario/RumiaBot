@@ -1,0 +1,16 @@
+{
+    "twitch": {
+        "tmiToken": "", // https://twitchapps.com/tmi/
+        "channel": "", // channel twitch username
+        "bot": "" // bot twitch username
+    },
+    "osu": {
+        "apiToken": "", // https://old.ppy.sh/api
+        "folder": "C:\\osu!\\Songs\\" // ous songs folder
+    },
+    "osuIrc": {
+        "login": "", // https://osu.ppy.sh/p/irc
+        "password": "" // https://osu.ppy.sh/p/irc
+    }
+}
+

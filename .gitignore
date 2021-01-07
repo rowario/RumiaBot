@@ -1,6 +1,2 @@
 /node_modules
-test.js
-/beatmaps/*
-/config
-/.idea
-/database
+/config/default.json
