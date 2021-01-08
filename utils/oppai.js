@@ -3,6 +3,7 @@ const config = require("config");
 const fetch = require("node-fetch");
 const fs = require("fs");
 const parser = new ojsama.parser();
+const { getOsuFilename } = require("./listenProvider");
 
 const calculatePerformancePoints = async (
     id = null,
@@ -13,8 +14,10 @@ const calculatePerformancePoints = async (
     return new Promise(async (res) => {
         const fileName =
             id === null ? await getOsuFileLocal() : await getOsuFile(id);
+        console.log(fileName);
         if (fileName) {
             fs.readFile(fileName, "utf-8", async (err, data) => {
+                parser.reset();
                 parser.feed(data);
                 const stars = new ojsama.diff().calc({
                     map: parser.map,
@@ -24,7 +27,6 @@ const calculatePerformancePoints = async (
                     stars,
                     acc_percent: accuracy,
                 });
-                parser.reset();
                 return res({
                     pp: ppResponse.total.toFixed(2),
                     stars: stars.total.toFixed(2),
@@ -34,20 +36,18 @@ const calculatePerformancePoints = async (
     });
 };
 
-const getOsuFileLocal = () => {
-    return fetch("http://localhost:24050/json")
-        .then((response) => response.json())
-        .then((data) => {
-            if (data !== "null") {
-                return (
-                    `${config.get("osu").folder}` +
-                    `${data.menu.bm.path.folder}\\${data.menu.bm.path.file}`
-                );
-            } else return false;
-        })
-        .catch(() => {
-            return false;
+const getLocalBeatmapInfo = () => {
+    return new Promise(async (res) => {
+        fs.readFile(getOsuFileLocal(), "utf-8", async (err, data) => {
+            parser.reset();
+            parser.feed(data);
+            return res(parser.map);
         });
+    });
+};
+
+const getOsuFileLocal = () => {
+    return `${config.get("osu").folder}${getOsuFilename()}`;
 };
 
 const getOsuFile = (id) => {
@@ -73,6 +73,7 @@ module.exports = {
     getOsuFile,
     getOsuFileLocal,
     calculatePerformancePoints,
+    getLocalBeatmapInfo,
 };
 
 // function _calculateDTAR(ms) {

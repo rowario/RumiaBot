@@ -1,6 +1,9 @@
 const twitchClient = require("../utils/twitchClient");
-const { calculatePerformancePoints } = require("../utils/oppai");
-const fetch = require("node-fetch");
+const {
+    calculatePerformancePoints,
+    getLocalBeatmapInfo,
+} = require("../utils/oppai");
+const { getSkinFolder, getBeatmapId } = require("../utils/listenProvider");
 
 const randomInteger = (min, max) => {
     let rand = min - 0.5 + Math.random() * (max - min + 1);
@@ -35,26 +38,22 @@ const Message = async (channel, tags, message, self) => {
         case "!нп":
         case "!song":
         case "!карта":
-            fetch("http://localhost:24050/json")
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data !== "null") {
-                        let bm = data.menu.bm,
-                            mapd = bm.metadata,
-                            mapLink =
-                                bm.id !== 0
-                                    ? `(https://osu.ppy.sh/beatmaps/${bm.id})`
-                                    : `(карты нет на сайте)`;
-                        twitchClient.say(
-                            channel,
-                            `/me > ${tags.username} Сейчас играет ${mapd.artist} - ${mapd.title} [${mapd.difficulty}] ${mapLink}`
-                        );
-                    } else
-                        twitchClient.say(
-                            channel,
-                            `/me > ${tags.username} Эта команда сейчас недоступна :(`
-                        );
-                });
+            const mapData = await getLocalBeatmapInfo();
+            const beatmapId = await getBeatmapId();
+            if (mapData !== "null") {
+                let mapLink =
+                    beatmapId && beatmapId > 0
+                        ? `(https://osu.ppy.sh/beatmaps/${beatmapId})`
+                        : `(карты нет на сайте)`;
+                twitchClient.say(
+                    channel,
+                    `/me > ${tags.username} Сейчас играет ${mapData.artist} - ${mapData.title} [${mapData.version}] ${mapLink}`
+                );
+            } else
+                twitchClient.say(
+                    channel,
+                    `/me > ${tags.username} Эта команда сейчас недоступна :(`
+                );
             break;
         case "!pp":
         case "!iffc":
@@ -78,6 +77,13 @@ const Message = async (channel, tags, message, self) => {
                 `${tags.username} > ${pp.pp} ${command[0]
                     .substr(1)
                     .toUpperCase()}`
+            );
+            break;
+        case "!skin":
+            const skinFolder = await getSkinFolder();
+            twitchClient.say(
+                channel,
+                `${tags.username} > Текущий скин: ${skinFolder}`
             );
             break;
         default:
