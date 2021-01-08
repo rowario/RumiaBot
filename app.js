@@ -5,6 +5,7 @@ const osu = require("node-osu");
 const path = require("path");
 const { execFile } = require("child_process");
 const { listenOsuMemoryProvider } = require("./utils/listenProvider");
+
 // const { BanchoClient } = require("bancho.js");
 
 const osuClient = new osu.Api(config.get("osu").apiToken, {
@@ -35,6 +36,7 @@ twitchClient.connect().then(async () => {
             }
         });
     }
+
     startOsuMemoryReader();
     listenOsuMemoryProvider();
 });

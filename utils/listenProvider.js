@@ -24,10 +24,7 @@ const listenOsuMemoryProvider = () => {
 
     ws.onmessage = (message) => {
         const response = JSON.parse(message.data);
-        if (JSON.stringify(data) !== JSON.stringify(response)) {
-            data = response;
-        }
-
+        if (JSON.stringify(data) !== JSON.stringify(response)) data = response;
         countMessages++;
     };
 
