@@ -1,6 +1,6 @@
 const url = require("url");
 const twitchClient = require("../utils/twitchClient");
-const { sendRequestNew } = require("../utils/osuRequest");
+const { sendRequest } = require("../utils/osuRequest");
 
 const {
     calculatePerformancePoints,
@@ -100,11 +100,35 @@ const Message = async (channel, tags, message, self) => {
                 parsedLink.host === "old.ppy.sh" ||
                 parsedLink.host === "osu.gatari.pw"
             ) {
-                await sendRequestNew(
-                    command,
-                    osuLinkParser(parsedLink),
-                    tags.username
-                );
+                const parsedOsuLink = osuLinkParser(parsedLink);
+                switch (parsedOsuLink.type) {
+                    case "s":
+                    case "b":
+                        const sendResult = await sendRequest(
+                            command,
+                            parsedOsuLink,
+                            tags.username
+                        );
+                        twitchClient.say(
+                            channel,
+                            sendResult
+                                ? `${tags.username} > Реквест успешно отправлен!`
+                                : `${tags.username} > Реквест не удалось отправить :(`
+                        );
+                        break;
+                    case "p":
+                        // Место под проверку профилей
+                        twitchClient.say(
+                            channel,
+                            `${tags.username} > Прости, но я пока-что не умею обрабатывать профили :(`
+                        );
+                    default:
+                        twitchClient.say(
+                            channel,
+                            `${tags.username} > Братан, ты скинул какую-то хуйню LUL`
+                        );
+                        break;
+                }
             }
             break;
     }

@@ -42,7 +42,7 @@ const getBpm = (baseBpm, existMods) => {
         : parseInt(dtCheck);
 };
 
-const sendRequestNew = (command, osuLinkData, sender) => {
+const sendRequest = (command, osuLinkData, sender) => {
     return new Promise((resolve) => {
         const mods = getMods(command);
         const getConfig =
@@ -90,50 +90,7 @@ const sendRequestNew = (command, osuLinkData, sender) => {
     });
 };
 
-const sendRequest = (linkInfo, username, osuLink, customText = "") => {
-    return new Promise((res) => {
-        let getMapConfig =
-            linkInfo.type === "b" ? { b: linkInfo.id } : { s: linkInfo.id };
-        osuApi.getBeatmaps(getMapConfig).then(async (beatmaps) => {
-            if (!beatmaps[0]) return;
-            let mapInfo = beatmaps[0],
-                oppaiData = [],
-                ppAccString = [],
-                mods = getMods(osuLink).toUpperCase();
-            for await (let acc of [95, 98, 99, 100]) {
-                let getOppai = await getOppaiData(mapInfo.id, mods, acc);
-                oppaiData.push(getOppai);
-                ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
-            }
-            let starRate = oppaiData[0]
-                    ? parseFloat(oppaiData[0].stats.sr).toFixed(2)
-                    : parseFloat(mapInfo.difficultyrating).toFixed(2),
-                genMsg = `{custom} {username} > {dllink} {mods} {mapstat}`
-                    .replace(/{custom}/, customText)
-                    .replace(/{username}/, username)
-                    .replace(
-                        /{dllink}/,
-                        `[https://osu.ppy.sh/b/${mapInfo.id} ${mapInfo.artist} - ${mapInfo.title}]`
-                    )
-                    .replace(/{mods}/, mods)
-                    .replace(
-                        /{mapstat}/,
-                        `(${getBpm(
-                            mapInfo.bpm,
-                            osuLink
-                        )} BPM, ${starRate}⭐, ${ppAccString.join(", ")})`
-                    );
-            await banchoSelf.sendMessage(genMsg.trim());
-            res({
-                title: mapInfo.title,
-                artist: mapInfo.artist,
-                mods: mods,
-            });
-        });
-    });
-};
-
 module.exports = {
     sendRequest,
-    sendRequestNew,
+    sendRequest,
 };
