@@ -10,6 +10,7 @@ twitchClient.on("redeem", Redeem);
 twitchClient.connect().then(async () => {
     console.log("Connected to Twitch");
     await startMemoryProcess();
-    listenOsuMemoryProvider();
-    connectToBancho();
+    await listenOsuMemoryProvider();
+    await connectToBancho();
+    console.log("Bot is ready!");
 });

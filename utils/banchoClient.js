@@ -8,14 +8,18 @@ const banchoIrc = new BanchoClient({
 const bancho = banchoIrc.getSelf();
 
 const connectToBancho = () => {
-    banchoIrc
-        .connect()
-        .then(() => {
-            console.log(`Connected to Bancho`);
-        })
-        .catch(() => {
-            console.log(`Cannot connect to Bancho`);
-        });
+    return new Promise((resolve) => {
+        banchoIrc
+            .connect()
+            .then(() => {
+                console.log(`Connected to Bancho`);
+                resolve(true);
+            })
+            .catch(() => {
+                console.log(`Cannot connect to Bancho`);
+                resolve(false);
+            });
+    });
 };
 
 module.exports = {
