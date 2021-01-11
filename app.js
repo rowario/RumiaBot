@@ -9,7 +9,7 @@ twitchClient.on("redeem", Redeem);
 
 twitchClient.connect().then(async () => {
     console.log("Connected to Twitch");
-    startMemoryProcess();
+    await startMemoryProcess();
     listenOsuMemoryProvider();
     connectToBancho();
 });

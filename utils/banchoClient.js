@@ -11,10 +11,10 @@ const connectToBancho = () => {
     banchoIrc
         .connect()
         .then(() => {
-            console.log(`Connected to Bancho!`);
+            console.log(`Connected to Bancho`);
         })
         .catch(() => {
-            console.log(`Cannot connect to Bancho!`);
+            console.log(`Cannot connect to Bancho`);
         });
 };
 

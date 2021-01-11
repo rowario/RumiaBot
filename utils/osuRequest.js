@@ -75,7 +75,7 @@ const sendRequest = (command, osuLinkData, sender) => {
                 bancho.sendMessage(message.trim());
                 resolve(true);
             })
-            .catch((err) => {
+            .catch(() => {
                 resolve(false);
             });
     });
