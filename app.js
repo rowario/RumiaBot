@@ -4,7 +4,7 @@ const { Message, Redeem } = require("./handlers");
 const osu = require("node-osu");
 const path = require("path");
 const { execFile } = require("child_process");
-const { listenOsuMemoryProvider } = require("./utils/listenProvider");
+const { listenOsuMemoryProvider } = require("./utils/memoryProvider");
 
 // const { BanchoClient } = require("bancho.js");
 

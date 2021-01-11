@@ -3,18 +3,15 @@ const config = require("config");
 const fetch = require("node-fetch");
 const fs = require("fs");
 const parser = new ojsama.parser();
-const { getOsuFilename } = require("./listenProvider");
+const { getOsuFilename } = require("./memoryProvider");
 
 const calculatePerformancePoints = async (
     id = null,
-
     mods = "",
     accuracy = 100
 ) => {
     return new Promise(async (res) => {
-        const fileName =
-            id === null ? await getOsuFileLocal() : await getOsuFile(id);
-        console.log(fileName);
+        const fileName = id === null ? getOsuFileLocal() : await getOsuFile(id);
         if (fileName) {
             fs.readFile(fileName, "utf-8", async (err, data) => {
                 parser.reset();
@@ -46,9 +43,7 @@ const getLocalBeatmapInfo = () => {
     });
 };
 
-const getOsuFileLocal = () => {
-    return `${config.get("osu").folder}${getOsuFilename()}`;
-};
+const getOsuFileLocal = () => `${config.get("osu").folder}${getOsuFilename()}`;
 
 const getOsuFile = (id) => {
     return new Promise((res) => {
@@ -75,68 +70,3 @@ module.exports = {
     calculatePerformancePoints,
     getLocalBeatmapInfo,
 };
-
-// function _calculateDTAR(ms) {
-//     if (ms < 300) {
-//         return 11;
-//     } else if (ms < 1200) {
-//         return 11 - (ms - 300) / 150;
-//     }
-//     return 5 - (ms - 1200) / 120;
-// }
-//
-// function _calculateAR(modifiers, ar) {
-//     let ms;
-//     switch (modifiers) {
-//         case "HR":
-//             return Math.min(10, ar * 1.4);
-//         case "EZ":
-//             return ar / 2;
-//
-//         case "DTHR": {
-//             if (ar < 4) {
-//                 ms = 1200 - 112 * ar;
-//             } else if (ar > 4) {
-//                 ms = 740 - 140 * (ar - 4);
-//             } else {
-//                 ms = 864 - 124 * (ar - 3);
-//             }
-//             return _calculateDTAR(ms);
-//         }
-//         case "DTEZ":
-//             return _calculateDTAR(1200 - 40 * ar);
-//
-//         case "DT":
-//             return _calculateDTAR(
-//                 ar > 5 ? 200 + (11 - ar) * 100 : 800 + (5 - ar) * 80
-//             );
-//         case "HT": {
-//             if (ar === 5) return 0;
-//             if (ar < 5) return -1.5 * (5 - ar);
-//             if (ar < 8) return 1.875 * ar;
-//             return 4 + 1.5 * (ar - 7);
-//         }
-//
-//         case "HTHR": {
-//             if (ar > 7) return 8.5;
-//             if (ar < 4) {
-//                 ms = 2700 - 252 * ar;
-//             } else if (ar < 5) {
-//                 ms = 1944 - 279 * (ar - 3);
-//             } else {
-//                 ms = 1665 - 315 * (ar - 4);
-//             }
-//             if (ar < 6) {
-//                 return 15 - ms / 120;
-//             } else if (ar > 7) {
-//                 return 13 - ms / 150;
-//             }
-//             return 15 - ms / 120;
-//         }
-//         case "HTEZ":
-//             return -0.75 * (10 - ar);
-//
-//         default:
-//             return ar;
-//     }
-// }

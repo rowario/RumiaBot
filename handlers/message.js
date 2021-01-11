@@ -1,19 +1,19 @@
+const url = require("url");
 const twitchClient = require("../utils/twitchClient");
+const { sendRequestNew } = require("../utils/osuRequest");
+
 const {
     calculatePerformancePoints,
     getLocalBeatmapInfo,
 } = require("../utils/oppai");
-const { getSkinFolder, getBeatmapId } = require("../utils/listenProvider");
-
-const randomInteger = (min, max) => {
-    let rand = min - 0.5 + Math.random() * (max - min + 1);
-    return Math.round(rand);
-};
+const { getSkinFolder, getBeatmapId } = require("../utils/memoryProvider");
 
 const Message = async (channel, tags, message, self) => {
     if (self) return;
     // TODO
     const command = message.split(" ");
+    const link = parseLink(command);
+    const parsedLink = url.parse(link);
     switch (command[0].toLowerCase()) {
         case "!iq":
         case "!коэффициентинтеллекта":
@@ -39,12 +39,12 @@ const Message = async (channel, tags, message, self) => {
         case "!song":
         case "!карта":
             const mapData = await getLocalBeatmapInfo();
-            const beatmapId = await getBeatmapId();
+            const beatmapId = getBeatmapId();
             if (mapData !== "null") {
                 let mapLink =
                     beatmapId && beatmapId > 0
                         ? `(https://osu.ppy.sh/beatmaps/${beatmapId})`
-                        : `(карты нет на сайте)`;
+                        : `(карта не загружена)`;
                 twitchClient.say(
                     channel,
                     `/me > ${tags.username} Сейчас играет ${mapData.artist} - ${mapData.title} [${mapData.version}] ${mapLink}`
@@ -80,14 +80,65 @@ const Message = async (channel, tags, message, self) => {
             );
             break;
         case "!skin":
-            const skinFolder = await getSkinFolder();
+        case "!currentskin":
+        case "!текущийскин":
+        case "!скин":
+            const skinFolder = getSkinFolder();
             twitchClient.say(
                 channel,
                 `${tags.username} > Текущий скин: ${skinFolder}`
             );
             break;
+        case "!bindskin":
+            const currentSkin = getSkinFolder();
+            break;
         default:
+            // Links & custom commands handlers
+            // // Links
+            if (
+                parsedLink.host === "osu.ppy.sh" ||
+                parsedLink.host === "old.ppy.sh" ||
+                parsedLink.host === "osu.gatari.pw"
+            ) {
+                await sendRequestNew(
+                    command,
+                    osuLinkParser(parsedLink),
+                    tags.username
+                );
+            }
+            break;
     }
+};
+
+const randomInteger = (min, max) =>
+    Math.round(min - 0.5 + Math.random() * (max - min + 1));
+
+const parseLink = (message) => {
+    let strMsg = message.toString();
+    return strMsg.indexOf("http") > -1
+        ? strMsg.slice(strMsg.indexOf("http"), strMsg.length)
+        : "";
+};
+
+const osuLinkParser = (linkData) => {
+    let pathArr = linkData.path.split("/");
+    if (["b", "beatmaps", "beatmapsets"].indexOf(pathArr[1]) > -1) {
+        if (pathArr[1] === "beatmapsets" && linkData.hash !== null) {
+            return { type: "b", id: parseInt(linkData.hash.split("/")[1]) };
+        } else if (["b", "beatmaps"].indexOf(pathArr[1]) > -1) {
+            return { type: "b", id: parseInt(pathArr[2]) };
+        }
+    }
+    if (["s", "beatmapsets"].indexOf(pathArr[1]) > -1) {
+        return { type: "s", id: parseInt(pathArr[2]) };
+    }
+    if (
+        ["u", "users"].indexOf(pathArr[1]) > -1 &&
+        ["osu.ppy.sh", "old.ppy.sh"].indexOf(linkData.host) > -1
+    ) {
+        return { type: "p", id: parseInt(pathArr[2]) };
+    }
+    return false;
 };
 
 module.exports = Message;
