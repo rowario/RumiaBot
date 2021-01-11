@@ -10,7 +10,6 @@ const { getSkinFolder, getBeatmapId } = require("../utils/memoryProvider");
 
 const Message = async (channel, tags, message, self) => {
     if (self) return;
-    // TODO
     const command = message.split(" ");
     const link = parseLink(command);
     const parsedLink = url.parse(link);
@@ -40,7 +39,7 @@ const Message = async (channel, tags, message, self) => {
         case "!карта":
             const mapData = await getLocalBeatmapInfo();
             const beatmapId = getBeatmapId();
-            if (mapData !== "null") {
+            if (mapData && mapData !== "null") {
                 let mapLink =
                     beatmapId && beatmapId > 0
                         ? `(https://osu.ppy.sh/beatmaps/${beatmapId})`
@@ -74,9 +73,11 @@ const Message = async (channel, tags, message, self) => {
             const pp = await calculatePerformancePoints(null, mods, accuracy);
             twitchClient.say(
                 channel,
-                `${tags.username} > ${pp.pp} ${command[0]
-                    .substr(1)
-                    .toUpperCase()}`
+                pp
+                    ? `${tags.username} > ${pp.pp} ${command[0]
+                          .substr(1)
+                          .toUpperCase()}`
+                    : `${tags.username} > Не удалось обработать карту :(`
             );
             break;
         case "!skin":
@@ -117,18 +118,11 @@ const Message = async (channel, tags, message, self) => {
                         );
                         break;
                     case "p":
-                        // Место под проверку профилей
-                        twitchClient.say(
-                            channel,
-                            `${tags.username} > Прости, но я пока-что не умею обрабатывать профили :(`
-                        );
+                    // Место под проверку профилей
                     default:
-                        twitchClient.say(
-                            channel,
-                            `${tags.username} > Братан, ты скинул какую-то хуйню LUL`
-                        );
                         break;
                 }
+                return;
             }
             break;
     }

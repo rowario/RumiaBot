@@ -1,21 +1,12 @@
 const config = require("config");
 const url = require("url");
-const { BanchoClient } = require("bancho.js");
 const osu = require("node-osu");
+const { bancho } = require("./banchoClient");
 const { calculatePerformancePoints } = require("../utils/oppai");
 const osuApi = new osu.Api(config.get("osu").apiToken, {
     notFoundAsError: true,
     completeScores: true,
     parseNumeric: false,
-});
-const banchoIrc = new BanchoClient({
-    username: config.get("osuIrc").login,
-    password: config.get("osuIrc").password,
-});
-const banchoSelf = banchoIrc.getSelf();
-
-banchoIrc.connect().then(() => {
-    console.log(`Connected to bancho!`);
 });
 
 const getMods = (data) => {
@@ -81,7 +72,7 @@ const sendRequest = (command, osuLinkData, sender) => {
                             oppaiData[0].stars
                         }⭐, ${ppAccString.join(", ")})`
                     );
-                banchoSelf.sendMessage(message.trim());
+                bancho.sendMessage(message.trim());
                 resolve(true);
             })
             .catch((err) => {
@@ -91,6 +82,5 @@ const sendRequest = (command, osuLinkData, sender) => {
 };
 
 module.exports = {
-    sendRequest,
     sendRequest,
 };

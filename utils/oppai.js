@@ -14,20 +14,24 @@ const calculatePerformancePoints = async (
         const fileName = id === null ? getOsuFileLocal() : await getOsuFile(id);
         if (fileName) {
             fs.readFile(fileName, "utf-8", async (err, data) => {
-                parser.reset();
-                parser.feed(data);
-                const stars = new ojsama.diff().calc({
-                    map: parser.map,
-                    mods: ojsama.modbits.from_string(mods),
-                });
-                const ppResponse = ojsama.ppv2({
-                    stars,
-                    acc_percent: accuracy,
-                });
-                return res({
-                    pp: ppResponse.total.toFixed(2),
-                    stars: stars.total.toFixed(2),
-                });
+                try {
+                    parser.reset();
+                    parser.feed(data);
+                    const stars = new ojsama.diff().calc({
+                        map: parser.map,
+                        mods: ojsama.modbits.from_string(mods),
+                    });
+                    const ppResponse = ojsama.ppv2({
+                        stars,
+                        acc_percent: accuracy,
+                    });
+                    return res({
+                        pp: ppResponse.total.toFixed(2),
+                        stars: stars.total.toFixed(2),
+                    });
+                } catch {
+                    res(false);
+                }
             });
         } else return res({});
     });

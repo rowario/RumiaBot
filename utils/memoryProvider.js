@@ -16,7 +16,7 @@ const listenOsuMemoryProvider = () => {
     let countMessages = 0;
 
     ws.onopen = () => {
-        console.log("successfully connected to osu! memory parser!");
+        console.log("Successfully connected to osu! memory parser!");
         setTimeout(() => {
             if (countMessages === 0) process.exit(0);
         }, 10000);
@@ -30,7 +30,7 @@ const listenOsuMemoryProvider = () => {
 
     ws.onclose = () => {
         console.log("Disconnected from osu! memory parser, reconnecting...");
-        setTimeout(() => listenOsuMemoryProvider(), 1000);
+        setTimeout(() => listenOsuMemoryProvider(), 2000);
     };
 
     ws.onerror = () => {};
