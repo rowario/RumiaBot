@@ -1,0 +1,3 @@
+[submodule "BotDataProvider"]
+	path = BotDataProvider
+	url = https://github.com/rowario/BotDataProvider
