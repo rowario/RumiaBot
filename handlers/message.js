@@ -63,7 +63,7 @@ const Message = async (channel, tags, message, self) => {
             for (let i = 1; i <= 10; i++) {
                 if (command[i]) {
                     accuracy = Number(command[i])
-                        ? parseInt(command[i])
+                        ? parseFloat(command[i])
                         : accuracy;
                     mods = !Number(command[i])
                         ? (mods += command[i].toString())
