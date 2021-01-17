@@ -1,4 +1,7 @@
 const WebSocket = require("ws");
+const path = require("path");
+const { spawn } = require("child_process");
+
 let data = {
     beatmapId: 0,
     beatmapsetId: 0,
@@ -11,7 +14,30 @@ const getSkinFolder = () => data.skinFolderName;
 const getBeatmapId = () => data.beatmapId;
 const getBeatmapsetId = () => data.beatmapsetId;
 
-const listenOsuMemoryProvider = () => {
+const startMemoryProcess = () => {
+    return new Promise((resolve) => {
+        const exe = path.resolve(__dirname, "../memory/BotDataProvider");
+        console.log("[ MEMORY ] Starting memory reading server");
+        const process = spawn(exe);
+        process.stdout.on("data", (data) => {
+            console.log(
+                `[ MEMORY ] ` + data.toString().trim().replace(/\r?\n/g, "")
+            );
+            resolve(true);
+        });
+        process.stderr.on("data", () => {
+            console.log(
+                "[ MEMORY ] Memory process crashed, creating new one..."
+            );
+            process.stdin.pause();
+            process.kill();
+            startMemoryProcess();
+        });
+    });
+};
+
+const listenOsuMemoryProvider = async () => {
+    await startMemoryProcess();
     return new Promise((resolve) => {
         const ws = new WebSocket(`ws://localhost:16057/data`);
         let countMessages = 0;

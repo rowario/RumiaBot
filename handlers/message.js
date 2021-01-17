@@ -2,6 +2,7 @@ const url = require("url");
 const twitchClient = require("../utils/twitchClient");
 const { sendRequest } = require("../utils/osuRequest");
 const Commands = require("../utils/commands");
+const { getRewardData } = require("../utils/rewards");
 
 const {
     calculatePerformancePoints,
@@ -171,14 +172,18 @@ const Message = async (channel, tags, message, self) => {
                 switch (parsedOsuLink.type) {
                     case "s":
                     case "b":
-                        const sendResult = await sendRequest(
+                        const rewardData = tags["custom-reward-id"]
+                            ? await getRewardData(tags["custom-reward-id"])
+                            : {};
+                        const sended = await sendRequest(
                             command,
                             parsedOsuLink,
-                            tags.username
+                            tags.username,
+                            rewardData?.text || ""
                         );
                         twitchClient.say(
                             channel,
-                            sendResult
+                            sended
                                 ? `${tags.username} > Реквест успешно отправлен!`
                                 : `${tags.username} > Реквест не удалось отправить :(`
                         );

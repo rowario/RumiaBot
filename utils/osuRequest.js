@@ -33,7 +33,7 @@ const getBpm = (baseBpm, existMods) => {
         : parseInt(dtCheck);
 };
 
-const sendRequest = (command, osuLinkData, sender) => {
+const sendRequest = (command, osuLinkData, sender, text = "") => {
     return new Promise((resolve) => {
         const mods = getMods(command);
         const getConfig =
@@ -54,10 +54,11 @@ const sendRequest = (command, osuLinkData, sender) => {
                         acc
                     );
                     oppaiData.push(getOppai);
-                    ppAccString.push(`${acc}%: ${getOppai.pp}PP`);
+                    ppAccString.push(`${acc}%: ${parseInt(getOppai.pp)}PP`);
                 }
-                const message = `{username} > {dllink} {mods} {mapstat}`
+                const message = `{username} > {text} {dllink} {mods} {mapstat}`
                     .replace(/{username}/, sender)
+                    .replace(/{text}/, `${text.toUpperCase()}: `)
                     .replace(
                         /{dllink}/,
                         `[https://osu.ppy.sh/b/${map.id} ${map.artist} - ${map.title}]`
