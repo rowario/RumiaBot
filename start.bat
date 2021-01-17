@@ -1,5 +1,5 @@
 IF EXIST node_modules (
-  npm start
+	npm start
 ) ELSE (
-  npm ci & npm start
+	npm ci & npm start
 )

@@ -1,3 +1,5 @@
 /node_modules
 .idea
 /config/default.json
+/beatmaps/*.osu
+!/beatmaps/0.osu
