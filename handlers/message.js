@@ -1,6 +1,7 @@
 const url = require("url");
 const twitchClient = require("../utils/twitchClient");
 const { sendRequest } = require("../utils/osuRequest");
+const Commands = require("../utils/commands");
 
 const {
     calculatePerformancePoints,
@@ -93,6 +94,71 @@ const Message = async (channel, tags, message, self) => {
         case "!bindskin":
             const currentSkin = getSkinFolder();
             break;
+        case "!com":
+            //TODO: Редактирование комманд из базы данных
+            if (tags.badges.broadcaster || tags.badges.moderator) {
+                let alias = command[2];
+                let answer = Array.from(command)
+                    .splice(3, command.length)
+                    .join(" ");
+                switch (command[1]) {
+                    case "add":
+                        let created = await Commands.createCommand(
+                            alias,
+                            answer
+                        );
+                        twitchClient.say(
+                            channel,
+                            created
+                                ? `/me > ${tags.username}, команда ${
+                                      alias.split("/")[0]
+                                  } успешно добавлена`
+                                : `/me > ${tags.username}, такая команда уже существует!`
+                        );
+                        break;
+                    case "edit":
+                        let edited = await Commands.editCommand(alias, answer);
+                        twitchClient.say(
+                            channel,
+                            edited
+                                ? `/me > ${tags.username}, команда ${command[2]} успешно обновлена!`
+                                : `/me > ${tags.username}, не удалось обновить команду!`
+                        );
+                        break;
+                    case "del":
+                        let deleted = await Commands.deleteCommand(command[2]);
+                        twitchClient.say(
+                            channel,
+                            deleted
+                                ? `/me > ${tags.username}, команда ${command[2]} успешно удалена!`
+                                : `/me > ${tags.username}, такой команды не существует`
+                        );
+                        break;
+                    case "delalias":
+                        let deletedAlias = await Commands.deleteAlias(alias);
+                        twitchClient.say(
+                            channel,
+                            deletedAlias
+                                ? `/me > ${tags.username}, алиас ${command[2]} успешно удален!`
+                                : `/me > ${tags.username}, такой алиас не найден!`
+                        );
+                        break;
+                    case "addalias":
+                        let newAlias = command[3];
+                        let addedAlias = await Commands.addAlias(
+                            alias,
+                            newAlias
+                        );
+                        twitchClient.say(
+                            channel,
+                            addedAlias
+                                ? `/me > ${tags.username}, алиас ${newAlias} успешно добавлен!`
+                                : `/me > ${tags.username}, такой алиас не найден!`
+                        );
+                        break;
+                }
+            }
+            break;
         default:
             // Links & custom commands handlers
             // // Links
@@ -123,6 +189,10 @@ const Message = async (channel, tags, message, self) => {
                         break;
                 }
                 return;
+            }
+            if (await Commands.getCommand(command[0])) {
+                let answer = await Commands.getCommand(command[0]);
+                twitchClient.say(channel, `/me > ${answer.answer}`);
             }
             break;
     }

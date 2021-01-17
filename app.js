@@ -3,6 +3,7 @@ const { Message, Redeem } = require("./handlers");
 const { listenOsuMemoryProvider } = require("./utils/memoryProvider");
 const { connectToBancho } = require("./utils/banchoClient");
 const { startMemoryProcess } = require("./utils/memoryProcess");
+const { initCommands } = require("./utils/commands");
 
 twitchClient.on("message", Message);
 twitchClient.on("redeem", Redeem);
@@ -10,6 +11,7 @@ twitchClient.on("redeem", Redeem);
 twitchClient.connect().then(async () => {
     console.log("Connected to Twitch");
     await startMemoryProcess();
+    await initCommands();
     await listenOsuMemoryProvider();
     await connectToBancho();
     console.log("Bot is ready!");
