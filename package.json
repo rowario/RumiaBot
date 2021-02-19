@@ -16,6 +16,7 @@
   "dependencies": {
     "bancho.js": "^0.9.7",
     "config": "^3.3.3",
+    "log4js": "^6.3.0",
     "node-fetch": "^2.6.1",
     "node-osu": "^2.2.0",
     "ojsama": "^1.2.5",
