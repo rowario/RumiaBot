@@ -53,8 +53,21 @@ const sendRequest = (command, osuLinkData, sender, text = "") => {
                         mods.join(""),
                         acc
                     );
-                    oppaiData.push(getOppai);
-                    ppAccString.push(`${acc}%: ${parseInt(getOppai.pp)}PP`);
+                    if (getOppai) {
+                        oppaiData.push(getOppai);
+                        ppAccString.push(`${acc}%: ${parseInt(getOppai.pp)}PP`);
+                    }
+                }
+                let mapStats = ``;
+                if (oppaiData.length) {
+                    mapStats += `, ${oppaiData[0].stars} ⭐`;
+                } else {
+                    mapStats += `, ${parseFloat(map.difficulty.rating).toFixed(
+                        2
+                    )} ⭐`;
+                }
+                if (ppAccString.length) {
+                    mapStats += `, ${ppAccString.join(" | ")}`;
                 }
                 const message = `{username} > {text} {dllink} {mods} {mapstat}`
                     .replace(/{username}/, sender)
@@ -69,9 +82,7 @@ const sendRequest = (command, osuLinkData, sender, text = "") => {
                     )
                     .replace(
                         /{mapstat}/,
-                        `(${getBpm(map.bpm, mods)} BPM, ${
-                            oppaiData[0].stars
-                        }⭐, ${ppAccString.join(", ")})`
+                        `(${getBpm(map.bpm, mods)} BPM${mapStats})`
                     );
                 bancho.sendMessage(message.trim());
                 resolve(true);

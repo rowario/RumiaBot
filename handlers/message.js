@@ -1,4 +1,4 @@
-const url = require("url");
+const { parse } = require("url");
 const twitchClient = require("../utils/twitchClient");
 const { sendRequest } = require("../utils/osuRequest");
 const Commands = require("../utils/commands");
@@ -14,7 +14,7 @@ const Message = async (channel, tags, message, self) => {
     if (self) return;
     const command = message.split(" ");
     const link = parseLink(command);
-    const parsedLink = url.parse(link);
+    const parsedLink = parse(link);
     switch (command[0].toLowerCase()) {
         case "!iq":
         case "!коэффициентинтеллекта":
@@ -96,7 +96,6 @@ const Message = async (channel, tags, message, self) => {
             const currentSkin = getSkinFolder();
             break;
         case "!com":
-            //TODO: Редактирование комманд из базы данных
             if (tags.badges.broadcaster || tags.badges.moderator) {
                 let alias = command[2];
                 let answer = Array.from(command)
