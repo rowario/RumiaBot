@@ -1,6 +1,7 @@
 /node_modules
-test.js
-/beatmaps/*
-/config
-/.idea
-/database
+.idea
+/config/default.json
+/beatmaps/*.osu
+!/beatmaps/0.osu
+/memory/BotDataProvider.exe
+/error.log
