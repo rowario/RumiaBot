@@ -84,7 +84,7 @@ const sendRequest = (command, osuLinkData, sender, text = "") => {
                         /{mapstat}/,
                         `(${getBpm(map.bpm, mods)} BPM${mapStats})`
                     );
-                bancho.sendMessage(message.trim());
+                await bancho.sendMessage(message.trim());
                 resolve(true);
             })
             .catch(() => {

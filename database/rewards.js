@@ -1,7 +1,7 @@
 const sqlite3 = require("sqlite3");
 const { open } = require("sqlite");
 
-var db;
+let db;
 
 const initRewards = () => {
     return new Promise((resolve) => {

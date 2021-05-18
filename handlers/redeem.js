@@ -1,5 +1,5 @@
 const twitchClient = require("../utils/twitchClient");
-const Rewards = require("../utils/rewards");
+const Rewards = require("../database/rewards");
 
 const Redeem = async (channel, username, reward, tags, message) => {
     // TODO

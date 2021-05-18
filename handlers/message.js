@@ -1,8 +1,8 @@
 const { parse } = require("url");
 const twitchClient = require("../utils/twitchClient");
 const { sendRequest } = require("../utils/osuRequest");
-const Commands = require("../utils/commands");
-const { getRewardData } = require("../utils/rewards");
+const Commands = require("../database/commands");
+const { getRewardData } = require("../database/rewards");
 
 const {
     calculatePerformancePoints,
@@ -25,9 +25,10 @@ const Message = async (channel, tags, message, self) => {
                 checkUser = selfCheck
                     ? tags.username
                     : command[1].replace(/@/, "");
-            let randIq = randomInteger(1, 250);
-            if (checkUser === "rowario") randIq = 999;
-            if (checkUser === "robloxxa") randIq = -1;
+            let randIq = randomInteger(-20, 250);
+            if (checkUser.toLowerCase() === "rowario") randIq = 999;
+            if (checkUser.toLowerCase() === "rowariobot") randIq = 9999999;
+            if (checkUser.toLowerCase() === "robloxxa") randIq = -1;
             twitchClient.say(
                 channel,
                 selfCheck
@@ -196,7 +197,7 @@ const Message = async (channel, tags, message, self) => {
             }
             if (await Commands.getCommand(command[0])) {
                 let answer = await Commands.getCommand(command[0]);
-                twitchClient.say(channel, `/me > ${answer.answer}`);
+                twitchClient.say(channel, `/me ${answer.answer}`);
             }
             break;
     }
