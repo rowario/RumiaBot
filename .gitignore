@@ -3,4 +3,3 @@
 /config/default.json
 /beatmaps/*.osu
 !/beatmaps/0.osu
-/error.log
