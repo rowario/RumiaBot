@@ -1,72 +1,32 @@
-const WebSocket = require("ws");
-const path = require("path");
-const { spawn } = require("child_process");
+const axios = require("axios");
 
-let currentProcess;
+let data;
 
-let data = {
-    beatmapId: 0,
-    beatmapsetId: 0,
-    skinFolderName: "",
-    osuFile: "",
-};
+const getOsuFilename = () =>
+    `${data?.menu.bm.path.folder}/${data?.menu.bm.path.file}` || false;
+const getSkinFolder = () => data?.settings.folders.skin || false;
+const getBeatmapId = () => data?.menu.bm.id || false;
+const getBeatmapsetId = () => data?.menu.bm.set || false;
 
-const getOsuFilename = () => data.osuFile;
-const getSkinFolder = () => data.skinFolderName;
-const getBeatmapId = () => data.beatmapId;
-const getBeatmapsetId = () => data.beatmapsetId;
-
-const startMemoryProcess = () => {
-    return new Promise((resolve) => {
-        const exe = path.resolve(__dirname, "../memory/BotDataProvider");
-        console.log("[ MEMORY ] Starting memory reading server");
-        const process = spawn(exe);
-        currentProcess = process;
-        process.stdout.on("data", (data) => {
-            console.log(
-                `[ MEMORY ] ` + data.toString().trim().replace(/\r?\n/g, "")
-            );
-            resolve(true);
-        });
-        process.stderr.on("data", () => {
-            console.log(
-                "[ MEMORY ] Memory process crashed, creating new one..."
-            );
-            process.stdin.pause();
-            process.kill();
-            startMemoryProcess();
-        });
+const awaitTimer = (ms) =>
+    new Promise((res) => {
+        setTimeout(() => {
+            res();
+        }, ms);
     });
-};
 
 const listenOsuMemoryProvider = async () => {
-    if (!currentProcess) await startMemoryProcess();
-    return new Promise((resolve) => {
-        const ws = new WebSocket(`ws://localhost:16057/data`);
-        let countMessages = 0;
-
-        ws.onopen = () => {
-            console.log("Connected to memory websocket");
-            setTimeout(() => {
-                if (countMessages === 0) process.exit(0);
-            }, 10000);
-            resolve(true);
-        };
-
-        ws.onmessage = (message) => {
-            const response = JSON.parse(message.data);
-            if (JSON.stringify(data) !== JSON.stringify(response))
-                data = response;
-            countMessages++;
-        };
-
-        ws.onclose = () => {
-            process.stdout.write("-");
-            listenOsuMemoryProvider();
-        };
-
-        ws.onerror = () => {};
-    });
+    while (true) {
+        let response = await axios
+            .get("http://localhost:24050/json")
+            .catch((e) => {
+                console.log(`Cannot parse gOsuMemory`);
+            });
+        if (response?.status === 200) {
+            data = response.data;
+            await awaitTimer(500);
+        } else await awaitTimer(2000);
+    }
 };
 
 module.exports = {

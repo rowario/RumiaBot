@@ -40,9 +40,11 @@ const calculatePerformancePoints = async (
 const getLocalBeatmapInfo = () => {
     return new Promise(async (res) => {
         fs.readFile(getOsuFileLocal(), "utf-8", async (err, data) => {
-            parser.reset();
-            parser.feed(data);
-            return res(parser.map);
+            if (!err) {
+                parser.reset();
+                parser.feed(data);
+                return res(parser.map);
+            } else console.log(`Cannot load beatmap file!`);
         });
     });
 };
@@ -52,19 +54,18 @@ const getOsuFileLocal = () => `${config.get("osu").folder}${getOsuFilename()}`;
 const getOsuFile = (id) => {
     return new Promise((res) => {
         const fileName = `./beatmaps/${id}.osu`;
-        if (!fs.existsSync(fileName)) {
-            return fetch(`https://osu.ppy.sh/osu/${id}`)
-                .then((response) => response.text())
-                .then((data) => {
-                    fs.writeFile(fileName, data, (err) => {
-                        if (err) return res(false);
-                        return res(fileName);
-                    });
-                })
-                .catch(() => {
-                    return res(false);
+        if (fs.existsSync(fileName)) return res(fileName);
+        return fetch(`https://osu.ppy.sh/osu/${id}`)
+            .then((response) => response.text())
+            .then((data) => {
+                fs.writeFile(fileName, data, (err) => {
+                    if (err) return res(false);
+                    return res(fileName);
                 });
-        } else return res(fileName);
+            })
+            .catch(() => {
+                return res(false);
+            });
     });
 };
 

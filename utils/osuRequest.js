@@ -78,7 +78,7 @@ const sendRequest = (command, osuLinkData, sender, text = "") => {
                     )
                     .replace(
                         /{mods}/,
-                        mods != "" ? `+${mods.join("").toUpperCase()}` : ""
+                        mods !== "" ? `+${mods.join("").toUpperCase()}` : ""
                     )
                     .replace(
                         /{mapstat}/,

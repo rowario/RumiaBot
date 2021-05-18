@@ -1,5 +1,5 @@
 IF EXIST node_modules (
 	npm start
 ) ELSE (
-	npm ci & npm start
+	npm run install & npm start
 )
