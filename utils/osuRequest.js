@@ -1,7 +1,7 @@
 const config = require("config");
 const url = require("url");
 const osu = require("node-osu");
-const { bancho } = require("./banchoClient");
+const { bancho } = require("../api/banchoClient");
 const { calculatePerformancePoints } = require("../utils/oppai");
 const osuApi = new osu.Api(config.get("osu").apiToken, {
     notFoundAsError: true,
@@ -84,7 +84,7 @@ const sendRequest = (command, osuLinkData, sender, text = "") => {
                         /{mapstat}/,
                         `(${getBpm(map.bpm, mods)} BPM${mapStats})`
                     );
-                await bancho.sendMessage(message.trim());
+                await bancho().sendMessage(message.trim());
                 resolve(true);
             })
             .catch(() => {

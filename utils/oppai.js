@@ -3,7 +3,7 @@ const config = require("config");
 const fetch = require("node-fetch");
 const fs = require("fs");
 const parser = new ojsama.parser();
-const { getOsuFilename } = require("./memoryProvider");
+const { getOsuFilename } = require("../api/memoryProvider");
 
 const calculatePerformancePoints = async (
     id = null,

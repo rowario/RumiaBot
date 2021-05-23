@@ -1,5 +1,5 @@
 const { parse } = require("url");
-const twitchClient = require("../utils/twitchClient");
+const twitchClient = require("../api/twitchClient");
 const { sendRequest } = require("../utils/osuRequest");
 const Commands = require("../database/commands");
 const { getRewardData } = require("../database/rewards");
@@ -8,7 +8,7 @@ const {
     calculatePerformancePoints,
     getLocalBeatmapInfo,
 } = require("../utils/oppai");
-const { getSkinFolder, getBeatmapId } = require("../utils/memoryProvider");
+const { getSkinFolder, getBeatmapId } = require("../api/memoryProvider");
 
 const Message = async (channel, tags, message, self) => {
     if (self) return;

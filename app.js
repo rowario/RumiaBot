@@ -1,7 +1,7 @@
-const twitchClient = require("./utils/twitchClient");
+const twitchClient = require("./api/twitchClient");
 const { Message, Redeem } = require("./handlers");
-const { listenOsuMemoryProvider } = require("./utils/memoryProvider");
-const { connectToBancho } = require("./utils/banchoClient");
+const { listenOsuMemoryProvider } = require("./api/memoryProvider");
+const { connectToBancho } = require("./api/banchoClient");
 const { initCommands } = require("./database/commands");
 const { initRewards } = require("./database/rewards");
 
@@ -12,7 +12,7 @@ twitchClient.connect().then(async () => {
     console.log("Connected to Twitch");
     await initCommands();
     await initRewards();
-    await listenOsuMemoryProvider();
     await connectToBancho();
+    await listenOsuMemoryProvider();
     console.log("Bot is ready!");
 });

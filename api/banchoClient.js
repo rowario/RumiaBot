@@ -1,13 +1,18 @@
 const config = require("config");
 const { BanchoClient } = require("bancho.js");
-const banchoIrc = new BanchoClient({
-    username: config.get("osuIrc").login,
-    password: config.get("osuIrc").password,
-});
 
-const bancho = banchoIrc.getSelf();
+let banchoIrc;
+
+const bancho = () => {
+    return banchoIrc.getSelf();
+};
 
 const connectToBancho = () => {
+    banchoIrc = new BanchoClient({
+        username: config.get("osuIrc.login"),
+        password: config.get("osuIrc.password"),
+    });
+
     return new Promise((resolve) => {
         banchoIrc
             .connect()

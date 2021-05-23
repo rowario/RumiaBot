@@ -24,8 +24,7 @@
         "ojsama": "^1.2.5",
         "sqlite": "^4.0.19",
         "sqlite3": "^5.0.1",
-        "tmi.js": "^1.7.1",
-        "ws": "^7.4.2"
+        "tmi.js": "^1.7.1"
     },
     "devDependencies": {
         "axios": "^0.21.1"
