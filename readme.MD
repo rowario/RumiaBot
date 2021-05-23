@@ -1,1 +1,1 @@
-Twitch bot for [osu!](https://osu.pp.y.sh/) streamers!
+Twitch bot for [osu!](https://osu.ppy.sh/) streamers!
