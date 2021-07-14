@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/rowario/RumiaBot#readme",
   "dependencies": {
+    "axios": "^0.21.1",
     "bancho.js": "^0.9.7",
     "config": "^3.3.6",
     "node-fetch": "^2.6.1",
