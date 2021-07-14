@@ -17,16 +17,13 @@
     "license": "MIT",
     "dependencies": {
         "bancho.js": "^0.9.7",
-        "config": "^3.3.3",
+        "config": "^3.3.6",
         "log4js": "^6.3.0",
         "node-fetch": "^2.6.1",
-        "node-osu": "^2.2.0",
+        "node-osu": "^2.2.1",
         "ojsama": "^1.2.5",
-        "sqlite": "^4.0.19",
-        "sqlite3": "^5.0.1",
+        "sqlite": "^4.0.23",
+        "sqlite3": "^5.0.2",
         "tmi.js": "^1.8.3"
-    },
-    "devDependencies": {
-        "axios": "^0.21.1"
     }
 }
