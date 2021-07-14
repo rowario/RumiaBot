@@ -3,3 +3,7 @@
 /config/default.json
 /beatmaps/*.osu
 !/beatmaps/0.osu
+/database/commands.sqlite
+/database/rewards.sqlite
+/database/skins.sqlite
+

@@ -2,6 +2,7 @@ const { parse } = require("url");
 const twitchClient = require("../api/twitchClient");
 const { sendRequest } = require("../utils/osuRequest");
 const Commands = require("../database/commands");
+const { findSkin, bindSkin, unbindSkin } = require("../database/skins");
 const { getRewardData } = require("../database/rewards");
 
 const {
@@ -88,13 +89,37 @@ const Message = async (channel, tags, message, self) => {
         case "!текущийскин":
         case "!скин":
             const skinFolder = getSkinFolder();
+            let skinData = await findSkin(skinFolder);
+            let skinLink = skinData ? ` (${skinData.link})` : "";
             twitchClient.say(
                 channel,
-                `${tags.username} > Текущий скин: ${skinFolder}`
+                `${tags.username} > Текущий скин: ${skinFolder}${skinLink}`
             );
             break;
         case "!bindskin":
-            const currentSkin = getSkinFolder();
+            if (tags.badges.broadcaster || tags.badges.moderator) {
+                let currentSkin = getSkinFolder();
+                let skinLLink = message.replace("!bindskin", "").trim();
+                let skinAdded = await bindSkin(currentSkin, skinLLink);
+                twitchClient.say(
+                    channel,
+                    skinAdded
+                        ? `${tags.username} > Скин успешно добавлен!`
+                        : `${tags.username} > Не удалось закрепить ссылку на скин!`
+                );
+            }
+            break;
+        case "!unbindskin":
+            if (tags.badges.broadcaster || tags.badges.moderator) {
+                let currentSkin = getSkinFolder();
+                let skinRemoved = await unbindSkin(currentSkin);
+                twitchClient.say(
+                    channel,
+                    skinRemoved
+                        ? `${tags.username} > Ссылка на скин успешно откреплена!`
+                        : `${tags.username} > Не удалось открепить ссылку на скин!`
+                );
+            }
             break;
         case "!com":
             if (tags.badges.broadcaster || tags.badges.moderator) {

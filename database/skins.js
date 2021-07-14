@@ -24,7 +24,7 @@ const initSkins = () => {
     });
 };
 
-const bindSkins = async (name, link) => {
+const bindSkin = async (name, link) => {
     let skinCheck = await db.get(`SELECT * FROM skins WHERE name = ?`, name);
     if (skinCheck) return false;
     let added = await db.run(
@@ -36,18 +36,20 @@ const bindSkins = async (name, link) => {
 };
 
 const unbindSkin = async (name) => {
-    try {
-        await db.run(`DELETE FROM skins WHERE name = ?`, name);
-    } catch (error) {
-        return false;
+    if (await findSkin(name)) {
+        try {
+            await db.run(`DELETE FROM skins WHERE name = ?`, name);
+        } catch (error) {
+            return false;
+        }
+        return true;
     }
-    return true;
+    return false;
 };
 
 const findSkin = async (name) => {
     try {
-        const data = await db.get(`SELECT * FROM skins WHERE name = ?`, name);
-        return JSON.parse(data.data);
+        return await db.get(`SELECT * FROM skins WHERE name = ?`, name);
     } catch (error) {
         return false;
     }
@@ -59,7 +61,7 @@ const truncateTables = async () => {
 
 module.exports = {
     initSkins,
-    bindSkins,
+    bindSkin,
     unbindSkin,
     findSkin,
 };
