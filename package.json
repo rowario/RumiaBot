@@ -1,29 +1,33 @@
 {
-    "name": "RumiaBot",
-    "version": "1.0.0",
-    "description": "",
-    "main": "app.js",
-    "bin": "app.js",
-    "prettier": {
-        "tabWidth": 4
-    },
-    "scripts": {
-        "dev": "nodemon app.js",
-        "start": "node app.js",
-        "install": "npm install --build-from-source"
-    },
-    "keywords": [],
-    "author": "Rowario",
-    "license": "MIT",
-    "dependencies": {
-        "bancho.js": "^0.9.7",
-        "config": "^3.3.6",
-        "log4js": "^6.3.0",
-        "node-fetch": "^2.6.1",
-        "node-osu": "^2.2.1",
-        "ojsama": "^1.2.5",
-        "sqlite": "^4.0.23",
-        "sqlite3": "^5.0.2",
-        "tmi.js": "^1.8.3"
-    }
+  "name": "rumiabot",
+  "version": "1.0.0",
+  "description": "bot for osu! players",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rowario/RumiaBot.git"
+  },
+  "keywords": [
+    "osu!",
+    "bot"
+  ],
+  "author": "Rowario",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rowario/RumiaBot/issues"
+  },
+  "homepage": "https://github.com/rowario/RumiaBot#readme",
+  "dependencies": {
+    "bancho.js": "^0.9.7",
+    "config": "^3.3.6",
+    "node-fetch": "^2.6.1",
+    "node-osu": "^2.2.1",
+    "ojsama": "^2.2.0",
+    "sqlite": "^4.0.23",
+    "sqlite3": "^5.0.2",
+    "tmi.js": "^1.8.3"
+  }
 }
