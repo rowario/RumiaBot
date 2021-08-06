@@ -4,8 +4,7 @@
   "description": "bot for osu! players",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "install": "npm install"
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",
